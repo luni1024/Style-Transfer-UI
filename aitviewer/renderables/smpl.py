@@ -157,7 +157,7 @@ class SMPLSequence(Node):
 
         # First convert the relative joint angles to global joint angles in rotation matrix form.
         if self.smpl_layer.model_type != "flame":
-            if self.smpl_layer.model_type != "mano":
+            if self.smpl_layer.model_type != "mano" and self.smpl_layer.model_type != "smplh":
                 global_oris = local_to_global(
                     torch.cat([self.poses_root, self.poses_body, self.poses_left_hand, self.poses_right_hand], dim=-1),
                     self.skeleton[:, 0],
