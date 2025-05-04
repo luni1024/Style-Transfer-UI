@@ -51,6 +51,7 @@ class SMPLSequence(Node):
         z_up=False,
         post_fk_func=None,
         icon="\u0093",
+        keyframes=np.empty,
         **kwargs,
     ):
         """
@@ -79,6 +80,7 @@ class SMPLSequence(Node):
             if current_frame_only is True:  vertices (1, V, 3) and joints (1, N_JOINTS, 3)
         :param kwargs: Remaining arguments for rendering.
         """
+
         assert len(poses_body.shape) == 2
 
         # Set model icon
@@ -133,6 +135,9 @@ class SMPLSequence(Node):
 
             trans = torch.matmul(first_root_ori.unsqueeze(0), self.trans.unsqueeze(-1)).squeeze()
             self.trans = trans - trans[0:1]
+
+
+        self.keyframes = keyframes
 
         # Edit mode
         self.gui_modes.update({"edit": {"title": " Edit", "fn": self.gui_mode_edit, "icon": "\u0081"}})
@@ -317,7 +322,10 @@ class SMPLSequence(Node):
         if smpl_layer is None:
             smpl_layer = SMPLLayer(model_type="smplh", gender="neutral")
 
-        data = np.load(file)
+        data = np.load(file, allow_pickle=True)
+
+        keyframes=data["keyframes"]
+        print(keyframes)
 
         return cls(
             smpl_layer=smpl_layer,
@@ -335,7 +343,9 @@ class SMPLSequence(Node):
             poses_root=c2c(self.poses_root),
             betas=c2c(self.betas),
             trans=c2c(self.trans),
+            keyframes=c2c(self.keyframes),
         )
+        self.keyframes=np.empty
 
     @property
     def color(self):
@@ -679,6 +689,7 @@ class SMPLSequence(Node):
             self.poses_body[self.current_frame_id] = self._edit_pose[3:]
             self._edit_pose_dirty = False
             self.redraw(current_frame_only=True)
+            self.keyframes = np.append(self.keyframes, self.current_frame_id)
         imgui.same_line()
         if imgui.button("Apply to all"):
             edit_rots = Rotation.from_rotvec(np.reshape(self._edit_pose.cpu().numpy(), (-1, 3)))
