@@ -6,6 +6,7 @@ from array import array
 from collections import namedtuple
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
+import torch
 
 import imgui
 import moderngl_window
@@ -77,8 +78,8 @@ class Viewer(moderngl_window.WindowConfig):
     resource_dir = Path(__file__).parent / "shaders"
     size_mult = 1.0
     samples = 4
-    if sys.platform == "darwin":
-        gl_version = (4, 0)
+    if sys.platform == "darwin" or not(torch.cuda.is_available()):
+        gl_version = (4, 1)
     else:
         gl_version = (4, 5)
     window_type = None
