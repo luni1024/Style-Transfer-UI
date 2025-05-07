@@ -502,6 +502,7 @@ class Viewer(moderngl_window.WindowConfig):
         :param args: The arguments passed to `config_cls` constructor.
         :param log: Whether to log to the console.
         """
+        print(self.gl_version)
         self._init_scene()
 
         self.export_animation_range[-1] = self.scene.n_frames - 1
