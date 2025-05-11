@@ -51,7 +51,7 @@ class SMPLSequence(Node):
         z_up=False,
         post_fk_func=None,
         icon="\u0093",
-        keyframes=np.empty,
+        keyframes=np.array([]),
         **kwargs,
     ):
         """
@@ -345,7 +345,7 @@ class SMPLSequence(Node):
             trans=c2c(self.trans),
             keyframes=c2c(self.keyframes),
         )
-        self.keyframes=np.empty
+        self.keyframes=np.array([])
 
     @property
     def color(self):
@@ -690,6 +690,7 @@ class SMPLSequence(Node):
             self._edit_pose_dirty = False
             self.redraw(current_frame_only=True)
             self.keyframes = np.append(self.keyframes, self.current_frame_id)
+            self.keyframes = np.unique(self.keyframes)
         imgui.same_line()
         if imgui.button("Apply to all"):
             edit_rots = Rotation.from_rotvec(np.reshape(self._edit_pose.cpu().numpy(), (-1, 3)))
