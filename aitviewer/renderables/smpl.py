@@ -247,8 +247,16 @@ class SMPLSequence(Node):
         i_left_hand_end = i_body_end + smpl_layer.bm.NUM_HAND_JOINTS * 3
         i_right_hand_end = i_left_hand_end + smpl_layer.bm.NUM_HAND_JOINTS * 3
 
+
         print(poses[:, i_body_end:i_left_hand_end].shape)
         print(smpl_layer.bm.NUM_HAND_JOINTS * 3)
+
+
+        keyframes_data = np.load(npz_data_path.replace("motion", "keyframes"))
+        print(list(keyframes_data.keys()))
+        #print(keyframes_data["indices"])
+        #print(keyframes_data["joints"])
+
 
         return cls(
             poses_body=poses[:, i_root_end:i_body_end],
