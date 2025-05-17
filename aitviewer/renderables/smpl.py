@@ -51,7 +51,8 @@ class SMPLSequence(Node):
         z_up=False,
         post_fk_func=None,
         icon="\u0093",
-        keyframes=np.array([]),
+        keyframes_indices=np.array([], dtype=int),
+        keyframes_joints=np.array([]),
         **kwargs,
     ):
         """
@@ -137,7 +138,8 @@ class SMPLSequence(Node):
             self.trans = trans - trans[0:1]
 
 
-        self.keyframes = keyframes
+        self.keyframes_indices = keyframes_indices
+        self.keyframes_joints = keyframes_joints
 
         # Edit mode
         self.gui_modes.update({"edit": {"title": " Edit", "fn": self.gui_mode_edit, "icon": "\u0081"}})
@@ -229,6 +231,8 @@ class SMPLSequence(Node):
         ef = end_frame or body_data["poses"].shape[0]
         poses = body_data["poses"][sf:ef]
         trans = body_data["trans"][sf:ef]
+
+        print(body_data["mocap_framerate"])
 
         if fps_out is not None:
             fps_in = body_data["mocap_framerate"].tolist()
@@ -324,8 +328,8 @@ class SMPLSequence(Node):
 
         data = np.load(file, allow_pickle=True)
 
-        keyframes=data["keyframes"]
-        print(keyframes)
+        keyframes_indices=data["keyframes_indices"]
+        print(keyframes_indices)
 
         return cls(
             smpl_layer=smpl_layer,
@@ -343,9 +347,32 @@ class SMPLSequence(Node):
             poses_root=c2c(self.poses_root),
             betas=c2c(self.betas),
             trans=c2c(self.trans),
-            keyframes=c2c(self.keyframes),
+            keyframes_indices=c2c(self.keyframes_indices),
         )
-        self.keyframes=np.array([])
+        self.keyframes_indices=np.array([])
+
+# this export function saves a motion in the AMASS format, where there is only one poses array
+    def export_to_AMASS(self, file: Union[IO, str]):
+        np.savez(
+            file + "_motion.npz",
+            poses=c2c(self.poses),
+            trans=c2c(self.trans),
+            betas=c2c(self.betas[0]),
+            mocap_framerate=c2c(60.0), # could change?
+            gender=c2c(np.array(self.smpl_layer.bm.gender)), # "female" # how to get this??
+        )
+         
+        self.keyframes_indices = np.unique(self.keyframes_indices)
+        self.keyframes_joints = self.joints[self.keyframes_indices]
+
+        np.savez(
+            file + "_keyframes.npz",
+            indices=c2c(self.keyframes_indices),
+            joints=c2c(self.keyframes_joints),
+           )
+        
+        self.keyframes_indices=np.array([])
+        self.keyframes_joints=np.array([])
 
     @property
     def color(self):
@@ -689,8 +716,8 @@ class SMPLSequence(Node):
             self.poses_body[self.current_frame_id] = self._edit_pose[3:]
             self._edit_pose_dirty = False
             self.redraw(current_frame_only=True)
-            self.keyframes = np.append(self.keyframes, self.current_frame_id)
-            self.keyframes = np.unique(self.keyframes)
+            self.keyframes_indices = np.append(self.keyframes_indices, int(self.current_frame_id))
+            
         imgui.same_line()
         if imgui.button("Apply to all"):
             edit_rots = Rotation.from_rotvec(np.reshape(self._edit_pose.cpu().numpy(), (-1, 3)))
@@ -711,12 +738,13 @@ class SMPLSequence(Node):
             self.redraw(current_frame_only=True)
 
     def gui_io(self, imgui):
+        # uses export_to_AMASS now
         if imgui.button("Export sequence to NPZ"):
-            dir = os.path.join(C.export_dir, "SMPL")
+            dir = os.path.join(C.export_dir, "AMASS")
             os.makedirs(dir, exist_ok=True)
-            path = os.path.join(dir, self.name + ".npz")
-            self.export_to_npz(path)
-            print(f'Exported SMPL sequence to "{path}"')
+            path = os.path.join(dir, self.name)
+            self.export_to_AMASS(path)
+            print(f'Exported AMASS sequence to "{path}"')
 
     def gui_context_menu(self, imgui, x: int, y: int):
         if self.edit_mode and self._edit_joint is not None:
