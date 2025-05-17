@@ -753,7 +753,8 @@ class SMPLSequence(Node):
             os.makedirs(dir, exist_ok=True)
             path = os.path.join(dir, self.name)
             self.export_to_AMASS(path)
-            print(f'Exported AMASS sequence to "{path}"')
+            print(f'Exported AMASS sequence to "{path}_motion.npz"')
+            print(f'Exported keyframes to "{path}_keyframes.npz"')
 
     def gui_context_menu(self, imgui, x: int, y: int):
         if self.edit_mode and self._edit_joint is not None:
