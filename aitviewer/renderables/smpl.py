@@ -51,6 +51,8 @@ class SMPLSequence(Node):
         z_up=False,
         post_fk_func=None,
         icon="\u0093",
+        keyframes_indices=np.array([], dtype=int),
+        keyframes_joints=np.array([]),
         **kwargs,
     ):
         """
@@ -79,6 +81,7 @@ class SMPLSequence(Node):
             if current_frame_only is True:  vertices (1, V, 3) and joints (1, N_JOINTS, 3)
         :param kwargs: Remaining arguments for rendering.
         """
+
         assert len(poses_body.shape) == 2
 
         # Set model icon
@@ -133,6 +136,10 @@ class SMPLSequence(Node):
 
             trans = torch.matmul(first_root_ori.unsqueeze(0), self.trans.unsqueeze(-1)).squeeze()
             self.trans = trans - trans[0:1]
+
+
+        self.keyframes_indices = keyframes_indices
+        self.keyframes_joints = keyframes_joints
 
         # Edit mode
         self.gui_modes.update({"edit": {"title": " Edit", "fn": self.gui_mode_edit, "icon": "\u0081"}})
@@ -225,6 +232,8 @@ class SMPLSequence(Node):
         poses = body_data["poses"][sf:ef]
         trans = body_data["trans"][sf:ef]
 
+
+
         if fps_out is not None:
             fps_in = body_data["mocap_framerate"].tolist()
             if fps_in != fps_out:
@@ -237,6 +246,9 @@ class SMPLSequence(Node):
         i_body_end = i_root_end + smpl_layer.bm.NUM_BODY_JOINTS * 3
         i_left_hand_end = i_body_end + smpl_layer.bm.NUM_HAND_JOINTS * 3
         i_right_hand_end = i_left_hand_end + smpl_layer.bm.NUM_HAND_JOINTS * 3
+
+        print(poses[:, i_body_end:i_left_hand_end].shape)
+        print(smpl_layer.bm.NUM_HAND_JOINTS * 3)
 
         return cls(
             poses_body=poses[:, i_root_end:i_body_end],
@@ -317,7 +329,10 @@ class SMPLSequence(Node):
         if smpl_layer is None:
             smpl_layer = SMPLLayer(model_type="smplh", gender="neutral")
 
-        data = np.load(file)
+        data = np.load(file, allow_pickle=True)
+
+        keyframes_indices=data["keyframes_indices"]
+        print(keyframes_indices)
 
         return cls(
             smpl_layer=smpl_layer,
@@ -335,7 +350,34 @@ class SMPLSequence(Node):
             poses_root=c2c(self.poses_root),
             betas=c2c(self.betas),
             trans=c2c(self.trans),
+            keyframes_indices=c2c(self.keyframes_indices),
         )
+        self.keyframes_indices=np.array([])
+
+# this export function saves a motion in the AMASS format, where there is only one poses array
+    def export_to_AMASS(self, file: Union[IO, str]):
+
+
+        np.savez(
+            file + "_motion.npz",
+            poses=c2c(self.posesWHands),
+            trans=c2c(self.trans),
+            betas=c2c(self.betas[0]),
+            mocap_framerate=60.0, # could change?
+            gender=c2c(np.array(self.smpl_layer.bm.gender)),
+        )
+         
+        self.keyframes_indices = np.unique(self.keyframes_indices)
+        self.keyframes_joints = self.joints[self.keyframes_indices]
+
+        np.savez(
+            file + "_keyframes.npz",
+            indices=c2c(self.keyframes_indices),
+            joints=c2c(self.keyframes_joints),
+           )
+        
+        self.keyframes_indices=np.array([])
+        self.keyframes_joints=np.array([])
 
     @property
     def color(self):
@@ -360,6 +402,10 @@ class SMPLSequence(Node):
     @property
     def poses(self):
         return torch.cat((self.poses_root, self.poses_body), dim=-1)
+    
+    @property
+    def posesWHands(self):
+        return torch.cat((self.poses_root, self.poses_body, self.poses_left_hand, self.poses_right_hand), dim=-1)
 
     @property
     def _edit_mode(self):
@@ -679,6 +725,8 @@ class SMPLSequence(Node):
             self.poses_body[self.current_frame_id] = self._edit_pose[3:]
             self._edit_pose_dirty = False
             self.redraw(current_frame_only=True)
+            self.keyframes_indices = np.append(self.keyframes_indices, int(self.current_frame_id))
+            
         imgui.same_line()
         if imgui.button("Apply to all"):
             edit_rots = Rotation.from_rotvec(np.reshape(self._edit_pose.cpu().numpy(), (-1, 3)))
@@ -699,12 +747,13 @@ class SMPLSequence(Node):
             self.redraw(current_frame_only=True)
 
     def gui_io(self, imgui):
+        # uses export_to_AMASS now
         if imgui.button("Export sequence to NPZ"):
-            dir = os.path.join(C.export_dir, "SMPL")
+            dir = os.path.join(C.export_dir, "AMASS")
             os.makedirs(dir, exist_ok=True)
-            path = os.path.join(dir, self.name + ".npz")
-            self.export_to_npz(path)
-            print(f'Exported SMPL sequence to "{path}"')
+            path = os.path.join(dir, self.name)
+            self.export_to_AMASS(path)
+            print(f'Exported AMASS sequence to "{path}"')
 
     def gui_context_menu(self, imgui, x: int, y: int):
         if self.edit_mode and self._edit_joint is not None:
