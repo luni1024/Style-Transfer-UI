@@ -232,7 +232,7 @@ class SMPLSequence(Node):
         poses = body_data["poses"][sf:ef]
         trans = body_data["trans"][sf:ef]
 
-        print(body_data["mocap_framerate"])
+
 
         if fps_out is not None:
             fps_in = body_data["mocap_framerate"].tolist()
@@ -246,6 +246,9 @@ class SMPLSequence(Node):
         i_body_end = i_root_end + smpl_layer.bm.NUM_BODY_JOINTS * 3
         i_left_hand_end = i_body_end + smpl_layer.bm.NUM_HAND_JOINTS * 3
         i_right_hand_end = i_left_hand_end + smpl_layer.bm.NUM_HAND_JOINTS * 3
+
+        print(poses[:, i_body_end:i_left_hand_end].shape)
+        print(smpl_layer.bm.NUM_HAND_JOINTS * 3)
 
         return cls(
             poses_body=poses[:, i_root_end:i_body_end],
@@ -353,13 +356,15 @@ class SMPLSequence(Node):
 
 # this export function saves a motion in the AMASS format, where there is only one poses array
     def export_to_AMASS(self, file: Union[IO, str]):
+
+
         np.savez(
             file + "_motion.npz",
-            poses=c2c(self.poses),
+            poses=c2c(self.posesWHands),
             trans=c2c(self.trans),
             betas=c2c(self.betas[0]),
-            mocap_framerate=c2c(60.0), # could change?
-            gender=c2c(np.array(self.smpl_layer.bm.gender)), # "female" # how to get this??
+            mocap_framerate=60.0, # could change?
+            gender=c2c(np.array(self.smpl_layer.bm.gender)),
         )
          
         self.keyframes_indices = np.unique(self.keyframes_indices)
@@ -397,6 +402,10 @@ class SMPLSequence(Node):
     @property
     def poses(self):
         return torch.cat((self.poses_root, self.poses_body), dim=-1)
+    
+    @property
+    def posesWHands(self):
+        return torch.cat((self.poses_root, self.poses_body, self.poses_left_hand, self.poses_right_hand), dim=-1)
 
     @property
     def _edit_mode(self):
