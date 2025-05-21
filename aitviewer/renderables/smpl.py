@@ -373,9 +373,21 @@ class SMPLSequence(Node):
             mocap_framerate=60.0, # could change?
             gender=c2c(np.array(self.smpl_layer.bm.gender)),
         )
+
+        verts, all_joints = self.smpl_layer(
+                poses_root=self.poses_root,
+                poses_body=self.poses_body,
+                poses_left_hand=self.poses_left_hand,
+                poses_right_hand=self.poses_right_hand,
+                betas=self.betas,
+                trans=self.trans,
+            )
+        
+        whole_skeleton = self.smpl_layer.skeletons()["all"].T
+        all_joints = all_joints[:, : whole_skeleton.shape[0]]
          
         self.keyframes_indices = np.unique(self.keyframes_indices)
-        self.keyframes_joints = self.joints[self.keyframes_indices]
+        self.keyframes_joints = all_joints[self.keyframes_indices]
 
         np.savez(
             file + "_keyframes.npz",
@@ -383,8 +395,10 @@ class SMPLSequence(Node):
             joints=c2c(self.keyframes_joints),
            )
         
-        self.keyframes_indices=np.array([], dtype = int)
+        self.keyframes_indices=np.array([], dtype=int)
         self.keyframes_joints=np.array([])
+
+
 
     @property
     def color(self):
