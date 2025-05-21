@@ -183,7 +183,7 @@ class SMPLSequence(Node):
         if self._z_up and not C.z_up:
             self.rotation = np.matmul(np.array([[1, 0, 0], [0, 0, 1], [0, -1, 0]]), self.rotation)
 
-        if self.smpl_layer.model_type != "mano":
+        if self.smpl_layer.model_type != "mano": # self.smpl_layer.model_type != "smplh"
             self.rbs = RigidBodies(self.joints, global_oris, length=0.1, gui_affine=False, name="Joint Angles")
             self._add_node(self.rbs, enabled=self._show_joint_angles)
 
@@ -254,8 +254,9 @@ class SMPLSequence(Node):
 
         keyframes_data = np.load(npz_data_path.replace("motion", "keyframes"))
         print(list(keyframes_data.keys()))
-        #print(keyframes_data["indices"])
-        #print(keyframes_data["joints"])
+        # print(keyframes_data["indices"])
+        # print(keyframes_data["joints"].shape) for dimension
+        # print(keyframes_data["joints"])
 
 
         return cls(
@@ -496,7 +497,7 @@ class SMPLSequence(Node):
 
         skeleton = (
             self.smpl_layer.skeletons()["body"].T
-            if not self.smpl_layer.model_type == "mano"
+            if not self.smpl_layer.model_type == "mano" # and not self.smpl_layer.model_type == "smplh"
             else self.smpl_layer.skeletons()["all"].T
         )
         faces = self.smpl_layer.bm.faces.astype(np.int64)
