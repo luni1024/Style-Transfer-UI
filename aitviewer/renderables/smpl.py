@@ -365,7 +365,6 @@ class SMPLSequence(Node):
 # this export function saves a motion in the AMASS format, where there is only one poses array
     def export_to_AMASS(self, file: Union[IO, str]):
 
-
         np.savez(
             file + "_motion.npz",
             poses=c2c(self.posesWHands),
@@ -384,7 +383,7 @@ class SMPLSequence(Node):
             joints=c2c(self.keyframes_joints),
            )
         
-        self.keyframes_indices=np.array([])
+        self.keyframes_indices=np.array([], dtype = int)
         self.keyframes_joints=np.array([])
 
     @property
