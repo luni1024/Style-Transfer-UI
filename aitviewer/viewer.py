@@ -539,6 +539,14 @@ class Viewer(moderngl_window.WindowConfig):
                 self.scene.current_frame_id = (self.scene.current_frame_id + frames) % self.scene.n_frames
                 self._last_frame_rendered_at += frames * (1.0 / self.playback_fps)
 
+        seq_amass = self.scene.get_node_by_uid(1)
+        if self.scene.current_frame_id in seq_amass.keyframes_indices:
+            seq_amass.skeleton_seq.color = (0, 255, 0 , 1)
+            seq_amass.mesh_seq.color = (0, 255, 0 , 0.5)
+        else:
+            seq_amass.skeleton_seq.color = seq_amass.skeleton_default_color
+            seq_amass.mesh_seq.color = seq_amass.mesh_default_color
+
         # Update camera matrices that will be used for rendering
         if isinstance(self.scene.camera, ViewerCamera):
             self.scene.camera.update_animation(frame_time)
