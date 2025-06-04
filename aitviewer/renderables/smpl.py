@@ -253,12 +253,16 @@ class SMPLSequence(Node):
         print(poses[:, i_body_end:i_left_hand_end].shape)
         print(smpl_layer.bm.NUM_HAND_JOINTS * 3)
 
-
-        keyframes_data = np.load(npz_data_path.replace("motion", "keyframes"))
-        print(list(keyframes_data.keys()))
-        # print(keyframes_data["indices"])
-        # print(keyframes_data["joints"].shape) for dimension
-        # print(keyframes_data["joints"])
+        try:
+            keyframes_data = np.load(npz_data_path.replace("motion", "keyframes"))
+            keyframes_indices=keyframes_data["indices"]
+            print(list(keyframes_data.keys()))
+            # print(keyframes_data["indices"])
+            # print(keyframes_data["joints"].shape) for dimension
+            # print(keyframes_data["joints"])
+        except:
+            keyframes_indices=np.array([],dtype=int)
+            print("No keyframes file")
 
 
         return cls(
@@ -270,6 +274,7 @@ class SMPLSequence(Node):
             betas=body_data["betas"][np.newaxis],
             trans=trans,
             z_up=z_up,
+            keyframes_indices=keyframes_indices,
             **kwargs,
         )
 
