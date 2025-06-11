@@ -160,6 +160,7 @@ class SMPLSequence(Node):
                 color=(1.0, 177 / 255, 1 / 255, 1.0),
                 name="Skeleton",
             )
+            self.skeleton_default_color = self.skeleton_seq.color
             self._add_node(self.skeleton_seq)
 
         # First convert the relative joint angles to global joint angles in rotation matrix form.
@@ -195,6 +196,7 @@ class SMPLSequence(Node):
             color=kwargs.get("color", (160 / 255, 160 / 255, 160 / 255, 1.0)),
             name="Mesh",
         )
+        self.mesh_default_color = self.mesh_seq.color
         self._add_node(self.mesh_seq)
 
         # Save view mode state to restore when exiting edit mode.
@@ -251,12 +253,16 @@ class SMPLSequence(Node):
         print(poses[:, i_body_end:i_left_hand_end].shape)
         print(smpl_layer.bm.NUM_HAND_JOINTS * 3)
 
-
-        keyframes_data = np.load(npz_data_path.replace("motion", "keyframes"))
-        print(list(keyframes_data.keys()))
-        # print(keyframes_data["indices"])
-        # print(keyframes_data["joints"].shape) for dimension
-        # print(keyframes_data["joints"])
+        try:
+            keyframes_data = np.load(npz_data_path.replace("motion", "keyframes"))
+            keyframes_indices=keyframes_data["indices"]
+            print(list(keyframes_data.keys()))
+            # print(keyframes_data["indices"])
+            # print(keyframes_data["joints"].shape) for dimension
+            # print(keyframes_data["joints"])
+        except:
+            keyframes_indices=np.array([],dtype=int)
+            print("No keyframes file")
 
 
         return cls(
@@ -268,6 +274,7 @@ class SMPLSequence(Node):
             betas=body_data["betas"][np.newaxis],
             trans=trans,
             z_up=z_up,
+            keyframes_indices=keyframes_indices,
             **kwargs,
         )
 
