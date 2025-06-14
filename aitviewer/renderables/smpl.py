@@ -153,6 +153,7 @@ class SMPLSequence(Node):
 
         # Nodes
         self.vertices, self.joints, self.faces, self.skeleton = self.fk()
+        self.original_joints = self.joints.copy()
 
         if self._is_rigged:
             self.skeleton_seq = Skeletons(
