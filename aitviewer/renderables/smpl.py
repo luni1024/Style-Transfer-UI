@@ -53,6 +53,7 @@ class SMPLSequence(Node):
         icon="\u0093",
         keyframes_indices=np.array([], dtype=int),
         keyframes_joints=np.array([]),
+        # original_poses?
         **kwargs,
     ):
         """
