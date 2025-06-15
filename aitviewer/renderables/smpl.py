@@ -51,6 +51,7 @@ class SMPLSequence(Node):
         z_up=False,
         post_fk_func=None,
         icon="\u0093",
+        original_poses=None,
         keyframes_indices=np.array([], dtype=int),
         keyframes_joints=np.array([]),
         **kwargs,
@@ -137,6 +138,7 @@ class SMPLSequence(Node):
             trans = torch.matmul(first_root_ori.unsqueeze(0), self.trans.unsqueeze(-1)).squeeze()
             self.trans = trans - trans[0:1]
 
+        self.original_poses = original_poses if original_poses is not None else self.posesWHands
 
         self.keyframes_indices = keyframes_indices
         self.keyframes_joints = keyframes_joints
@@ -151,6 +153,7 @@ class SMPLSequence(Node):
 
         # Nodes
         self.vertices, self.joints, self.faces, self.skeleton = self.fk()
+        self.original_joints = self.joints.copy()
 
         if self._is_rigged:
             self.skeleton_seq = Skeletons(
