@@ -268,6 +268,8 @@ class SMPLSequence(Node):
             print("No keyframes file")
 
 
+        keyframes_joints = keyframes_data["joints"] if "keyframes_data" in locals() and "joints" in keyframes_data else np.array([])
+
         return cls(
             poses_body=poses[:, i_root_end:i_body_end],
             poses_root=poses[:, :i_root_end],
@@ -278,8 +280,11 @@ class SMPLSequence(Node):
             trans=trans,
             z_up=z_up,
             keyframes_indices=keyframes_indices,
+            keyframes_joints=keyframes_joints,
+            original_poses=poses, # maybe useful?
             **kwargs,
         )
+
 
     @classmethod
     def from_3dpw(cls, pkl_data_path, **kwargs):
