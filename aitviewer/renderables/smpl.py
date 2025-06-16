@@ -255,7 +255,8 @@ class SMPLSequence(Node):
         print(poses[:, i_body_end:i_left_hand_end].shape)
         print(smpl_layer.bm.NUM_HAND_JOINTS * 3)
 
-        keyframes_indices = body_data.get("keyframes", np.array([]))
+        keyframes_indices = body_data.get("keyframes_indices", np.array([]))
+        original_poses = body_data.get("original_poses", None)
 
         return cls(
             poses_body=poses[:, i_root_end:i_body_end],
@@ -267,7 +268,7 @@ class SMPLSequence(Node):
             trans=trans,
             z_up=z_up,
             keyframes_indices=keyframes_indices,
-            original_poses=poses,
+            original_poses=original_poses,
             **kwargs,
         )
 
