@@ -238,7 +238,6 @@ class SMPLSequence(Node):
         trans = body_data["trans"][sf:ef]
 
 
-
         if fps_out is not None:
             fps_in = body_data["mocap_framerate"].tolist()
             if fps_in != fps_out:
@@ -256,19 +255,22 @@ class SMPLSequence(Node):
         print(poses[:, i_body_end:i_left_hand_end].shape)
         print(smpl_layer.bm.NUM_HAND_JOINTS * 3)
 
-        try:
-            keyframes_data = np.load(npz_data_path.replace("motion", "keyframes"))
-            keyframes_indices=keyframes_data["indices"]
-            print(list(keyframes_data.keys()))
-            # print(keyframes_data["indices"])
-            # print(keyframes_data["joints"].shape) for dimension
-            # print(keyframes_data["joints"])
-        except:
-            keyframes_indices=np.array([],dtype=int)
-            print("No keyframes file")
+    #     try:
+    #         keyframes_data = np.load(npz_data_path.replace("motion", "keyframes"))
+    #         keyframes_indices=keyframes_data["indices"]
+    #         print(list(keyframes_data.keys()))
+    #         # print(keyframes_data["indices"])
+    #         # print(keyframes_data["joints"].shape) for dimension
+    #         # print(keyframes_data["joints"])
+    #     except:
+    #         keyframes_indices=np.array([],dtype=int)
+    #         print("No keyframes file")
 
 
-        keyframes_joints = keyframes_data["joints"] if "keyframes_data" in locals() and "joints" in keyframes_data else np.array([])
+    #    # keyframes_joints = keyframes_data["joints"] if "keyframes_data" in locals() and "joints" in keyframes_data else np.array([])
+
+        keyframes_indices = body_data.get("keyframes", np.array([]))
+
 
         return cls(
             poses_body=poses[:, i_root_end:i_body_end],
@@ -280,8 +282,7 @@ class SMPLSequence(Node):
             trans=trans,
             z_up=z_up,
             keyframes_indices=keyframes_indices,
-            keyframes_joints=keyframes_joints,
-            original_poses=poses, # maybe useful?
+            original_poses=poses,
             **kwargs,
         )
 
