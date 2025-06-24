@@ -424,6 +424,8 @@ class SMPLSequence(Node):
     
     @property
     def posesWHands(self):
+        if self.poses_left_hand == None or self.poses_right_hand == None:
+            return self.poses
         return torch.cat((self.poses_root, self.poses_body, self.poses_left_hand, self.poses_right_hand), dim=-1)
 
     @property
