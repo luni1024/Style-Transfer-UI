@@ -306,6 +306,13 @@ class Scene(Node):
                 return n
         return None
 
+    def get_node_by_attribute(self, attr):
+        ns = self.collect_nodes()
+        for n in ns:
+            if hasattr(n, attr):
+                return n
+        return None
+
     def select(self, obj, selected_node=None, selected_instance=None, selected_tri_id=None):
         """Set 'obj' as the selected object"""
         self.selected_object = obj
