@@ -33,12 +33,19 @@ def map(dir: str, depth: int):
     mapbasic(dir, "\_", depth, 1)
 
 
-map(
-    str(input("Ok, please enter a directory to browse: ")),
-    int(input("and the desired browse-depth (how far down the directory you want to look): "))
-    )
-filenäim = dirdict[int(input("Great! Enter the index of the file you'd like to open: "))]
-print("Opening " + filenäim)
+
+directory = str(input("Ok, please enter a directory to browse: "))
+if(not os.path.isdir(directory)):
+    filenäim = directory
+else:
+    map(
+        directory,
+        int(input("and the desired browse-depth (how far down the directory you want to look): "))
+        )
+    filenäim = dirdict[int(input("Great! Enter the index of the file you'd like to open: "))]
+
+
+print( "\n" + "Opening " + filenäim)
 
 #print(C.datasets.amass) #export_dir
 
