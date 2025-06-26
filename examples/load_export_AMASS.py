@@ -47,25 +47,17 @@ else:
 
 print( "\n" + "Opening " + filenäim)
 
-#print(C.datasets.amass) #export_dir
-
 c = (149 / 255, 85 / 255, 149 / 255, 0.5)
 
-
-seq_export = SMPLSequence.from_amass(   #SMPL/AMASS Running.npz
+seq_export = SMPLSequence.from_amass(
     npz_data_path=os.path.join(
         C.export_dir,
         filenäim
-        ),  # AMASS Running_motion.npz #C2 - Run to stand_poses.npz
+        ),
     fps_out=60.0,
     color=c,
     name="AMASS Running",
     show_joint_angles=True
-
-#    file=os.path.join(
-#        C.export_dir, 
-#        filenäim),
-#    z_up=True
     )
 
 ptc_export = PointClouds(
