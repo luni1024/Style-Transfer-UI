@@ -32,26 +32,29 @@ def map(dir: str, depth: int):
     print(dir)
     mapbasic(dir, "\_", depth, 1)
 
+file_dir = os.path.realpath(os.path.dirname(__file__))
+Styletransfer_dir = os.path.split(file_dir)[0]
+export_dir = os.path.join(Styletransfer_dir, "export")   # this approach ensures one does not need to be in the `examples`-directory to open this file
+examples_dir = os.path.join(Styletransfer_dir, "examples")
+#print("file_dir: " + file_dir)                    # <- useful for debugging
+#print("Styletransfer_dir: " + Styletransfer_dir)  # <- useful for debugging
+#print("export_dir: " + export_dir)                # <- useful for debugging
+#print("examples_dir: " + examples_dir)            # <- useful for debugging
+os.chdir(examples_dir)
 
-
-directory = str(input("Ok, please enter a directory to browse: "))
-if(not os.path.isdir(directory)):
-    filenäim = directory
-else:
-    map(
-        directory,
-        int(input("and the desired browse-depth (how far down the directory you want to look): "))
-        )
-    filenäim = dirdict[int(input("Great! Enter the index of the file you'd like to open: "))]
+directory = os.path.join(export_dir, "AMASS")
+map(directory, 4)
+filenäim = dirdict[int(input("Please enter the index of the file you'd like to open: "))]
 
 
 print( "\n" + "Opening " + filenäim)
+#print("\n" + "from: " + os.path.join(Styletransfer_dir, filenäim))     # <- useful for debugging
 
 c = (149 / 255, 85 / 255, 149 / 255, 0.5)
 
 seq_export = SMPLSequence.from_amass(
     npz_data_path=os.path.join(
-        C.export_dir,
+        Styletransfer_dir,
         filenäim
         ),
     fps_out=60.0,
