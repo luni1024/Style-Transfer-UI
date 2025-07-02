@@ -54,6 +54,7 @@ class SMPLSequence(Node):
         original_poses=None,
         keyframes_indices=np.array([], dtype=int),
         keyframes_joints=np.array([]),
+        annotation=None,
         **kwargs,
     ):
         """
@@ -203,6 +204,8 @@ class SMPLSequence(Node):
         # Save view mode state to restore when exiting edit mode.
         self._view_mode_color = self.mesh_seq.color
         self._view_mode_joint_angles = self._show_joint_angles
+
+        self.annotation = annotation
 
     @classmethod
     def from_amass(
@@ -722,6 +725,14 @@ class SMPLSequence(Node):
                 for c in tree.get(j, []):
                     self._gui_joint(imgui, c, tree)
                 imgui.tree_pop()
+
+    def gui_stats(self, imgui):
+        if self.annotation is not None:
+            imgui.text("Annotation: ")
+            imgui.same_line()
+            imgui.input_text("", self.annotation)
+        super().gui_stats(imgui)
+
 
     def gui_mode_edit(self, imgui):
         skel = self.smpl_layer.skeletons()["body"].cpu().numpy()
