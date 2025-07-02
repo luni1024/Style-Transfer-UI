@@ -57,6 +57,8 @@ class Skeletons(Node):
         )
         self._add_nodes(self.spheres, self.lines, show_in_hierarchy=False)
 
+        self.default_color = self.color
+
     @classmethod
     def from_bvh(cls, path: str, z_up=False, **kwargs):
         """
@@ -136,3 +138,38 @@ class Skeletons(Node):
         self.material.color = color
         self.spheres.color = color
         self.lines.color = color
+
+
+     # Overwritten from Node
+    def gui_material(self, imgui):
+        """Render GUI with material properties"""
+        print("Method has been called")
+
+        # Color Control
+        uc, color = imgui.color_edit4("Color##color{}'".format(self.unique_name), *self.default_color)
+        if uc:
+            self.default_color = color
+            print("Color has been changed")
+
+        # Diffuse
+        ud, diffuse = imgui.slider_float(
+            "Diffuse##diffuse{}".format(self.unique_name),
+            self.material.diffuse,
+            0.0,
+            1.0,
+            "%.2f",
+        )
+        if ud:
+            self.material.diffuse = diffuse
+
+        # Ambient
+        ua, ambient = imgui.slider_float(
+            "Ambient##ambient{}".format(self.unique_name),
+            self.material.ambient,
+            0.0,
+            1.0,
+            "%.2f",
+        )
+        if ua:
+            self.material.ambient = ambient
+
