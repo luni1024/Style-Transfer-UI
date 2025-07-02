@@ -151,6 +151,9 @@ class Meshes(Node):
         if z_up:
             self.rotation = np.matmul(np.array([[1, 0, 0], [0, 0, 1], [0, -1, 0]]), self.rotation)
 
+        self.default_color = self.color
+
+
     @classmethod
     def instanced(cls, *args, positions=None, rotations=None, scales=None, **kwargs):
         """
@@ -738,6 +741,39 @@ class Meshes(Node):
         if imgui.button("Export OBJ##export_{}".format(self.unique_name)):
             mesh = trimesh.Trimesh(vertices=self.current_vertices, faces=self.faces, process=False)
             mesh.export("../export/" + self.name + ".obj")
+
+    # Overwritten from Node
+    def gui_material(self, imgui):
+        """Render GUI with material properties"""
+        print("Method has been called")
+
+        # Color Control
+        uc, color = imgui.color_edit4("Color##color{}'".format(self.unique_name), *self.default_color)
+        if uc:
+            self.default_color = color
+            print("Color has been changed")
+
+        # Diffuse
+        ud, diffuse = imgui.slider_float(
+            "Diffuse##diffuse{}".format(self.unique_name),
+            self.material.diffuse,
+            0.0,
+            1.0,
+            "%.2f",
+        )
+        if ud:
+            self.material.diffuse = diffuse
+
+        # Ambient
+        ua, ambient = imgui.slider_float(
+            "Ambient##ambient{}".format(self.unique_name),
+            self.material.ambient,
+            0.0,
+            1.0,
+            "%.2f",
+        )
+        if ua:
+            self.material.ambient = ambient
 
     def key_event(self, key, wnd_keys):
         if key == wnd_keys.F:
