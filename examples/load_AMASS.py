@@ -12,6 +12,7 @@ from aitviewer.viewer import Viewer
 if __name__ == "__main__":
     # Load an AMASS sequence and make sure it's sampled at 60 fps. This automatically loads the SMPL-H model.
     # We set transparency to 0.5 and render the joint coordinates systems.
+
     path = "ACCAD/Female1Running_c3d/C20 -  run to jump to walk_poses.npz"
     c = (149 / 255, 85 / 255, 149 / 255, 0.5)
 
