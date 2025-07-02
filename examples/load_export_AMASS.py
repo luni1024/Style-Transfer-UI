@@ -26,10 +26,10 @@ file_dir = os.path.realpath(os.path.dirname(__file__))
 Styletransfer_dir = os.path.split(file_dir)[0]
 export_dir = os.path.join(Styletransfer_dir, "export")   # this approach ensures one does not need to be in the `examples`-directory to open this file
 examples_dir = os.path.join(Styletransfer_dir, "examples")
-#print("file_dir: " + file_dir)                    # <- useful for debugging
-#print("Styletransfer_dir: " + Styletransfer_dir)  # <- useful for debugging
-#print("export_dir: " + export_dir)                # <- useful for debugging
-#print("examples_dir: " + examples_dir)            # <- useful for debugging
+print("file_dir: " + file_dir)                    # <- useful for debugging
+print("Styletransfer_dir: " + Styletransfer_dir)  # <- useful for debugging
+print("export_dir: " + export_dir)                # <- useful for debugging
+print("examples_dir: " + examples_dir)            # <- useful for debugging
 os.chdir(examples_dir)
 
 directory = os.path.join(export_dir, "AMASS")
@@ -38,15 +38,13 @@ filenäim = dirlist[int(input("Please enter the index of the file you'd like to 
 
 
 print( "\n" + "Opening " + filenäim)
-#print("\n" + "from: " + os.path.join(Styletransfer_dir, filenäim))     # <- useful for debugging
+dir_to_open = os.path.join(directory, filenäim)
+print("\n" + "from: " + dir_to_open)     # <- useful for debugging
 
 c = (149 / 255, 85 / 255, 149 / 255, 0.5)
 
 seq_export = SMPLSequence.from_amass(
-    npz_data_path=os.path.join(
-        Styletransfer_dir,
-        filenäim
-        ),
+    npz_data_path=dir_to_open,
     fps_out=60.0,
     color=c,
     name="AMASS Running",
