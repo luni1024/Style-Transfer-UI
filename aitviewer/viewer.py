@@ -32,6 +32,7 @@ from aitviewer.utils.imgui_integration import ImGuiRenderer
 from aitviewer.utils.perf_timer import PerfTimer
 from aitviewer.utils.utils import get_video_paths, video_to_gif
 
+
 MeshMouseIntersection = namedtuple(
     "MeshMouseIntersection",
     "node instance_id tri_id vert_id point_world point_local bc_coords",
@@ -243,6 +244,7 @@ class Viewer(moderngl_window.WindowConfig):
         self.server = None
         if C.server_enabled:
             self.server = ViewerServer(self, C.server_port)
+
 
     # noinspection PyAttributeOutsideInit
     def reset(self):
@@ -540,12 +542,13 @@ class Viewer(moderngl_window.WindowConfig):
                 self._last_frame_rendered_at += frames * (1.0 / self.playback_fps)
 
         seq_amass = self.scene.get_node_by_uid(1)
+        
         if self.scene.current_frame_id in seq_amass.keyframes_indices:
             seq_amass.skeleton_seq.color = (0, 255, 0 , 1)
             seq_amass.mesh_seq.color = (0, 255, 0 , 0.5)
         else:
-            seq_amass.skeleton_seq.color = seq_amass.skeleton_default_color
-            seq_amass.mesh_seq.color = seq_amass.mesh_default_color
+            seq_amass.skeleton_seq.color = seq_amass.skeleton_seq.default_color
+            seq_amass.mesh_seq.color = seq_amass.mesh_seq.default_color
 
         # Update camera matrices that will be used for rendering
         if isinstance(self.scene.camera, ViewerCamera):
