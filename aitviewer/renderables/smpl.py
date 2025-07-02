@@ -729,6 +729,14 @@ class SMPLSequence(Node):
                     self._gui_joint(imgui, c, tree)
                 imgui.tree_pop()
 
+    def gui_stats(self, imgui):
+        if self.annotation is not None:
+            imgui.text("Annotation: ")
+            imgui.same_line()
+            imgui.input_text("", self.annotation)
+        super().gui_stats(imgui)
+
+
     def gui_mode_edit(self, imgui):
         skel = self.smpl_layer.skeletons()["body"].cpu().numpy()
 
