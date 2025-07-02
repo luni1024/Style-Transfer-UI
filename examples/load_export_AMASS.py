@@ -7,30 +7,20 @@ from aitviewer.renderables.point_clouds import PointClouds
 from aitviewer.renderables.smpl import SMPLSequence
 from aitviewer.viewer import Viewer
 
-global dirdict
+global dirlist
 
-def mapbasic(dir: str, prefix: str, depthlim: int, depthcur: int):
-    global dirdict_count
-    global dirdict
+def mapdirhelper(dir: str, prefix: str, depthlim: int, depthcur: int):
+    global dirlist
 
-    for x in os.listdir(dir):
-        print(prefix + ("[" + str(dirdict_count) + "]") + x)
-        dirdict_count += 1
+    dirlist = os.listdir(dir)
+    direnum = enumerate(dirlist)
+    
+    for index, file in direnum:
+        print(prefix + "[" + str(index) + "]" + file)
 
-        dirdict.append(dir + "/" + x)
-
-        if(os.path.isdir(dir + "/" + x) and (depthcur < depthlim)):
-            #print("it's dir")
-            mapbasic(dir + "/" + x, ("  " + prefix), depthlim, (depthcur + 1))
-
-def map(dir: str, depth: int):
-    global dirdict
-    global dirdict_count
-    dirdict_count = 0
-    dirdict = []
-
+def mapdir(dir: str, depth: int):
     print(dir)
-    mapbasic(dir, "\_", depth, 1)
+    mapdirhelper(dir, "", depth, 1)
 
 file_dir = os.path.realpath(os.path.dirname(__file__))
 Styletransfer_dir = os.path.split(file_dir)[0]
@@ -43,8 +33,8 @@ examples_dir = os.path.join(Styletransfer_dir, "examples")
 os.chdir(examples_dir)
 
 directory = os.path.join(export_dir, "AMASS")
-map(directory, 4)
-filenäim = dirdict[int(input("Please enter the index of the file you'd like to open: "))]
+mapdir(directory, 1)
+filenäim = dirlist[int(input("Please enter the index of the file you'd like to open: "))]
 
 
 print( "\n" + "Opening " + filenäim)
