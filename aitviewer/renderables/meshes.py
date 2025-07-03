@@ -745,13 +745,11 @@ class Meshes(Node):
     # Overwritten from Node
     def gui_material(self, imgui):
         """Render GUI with material properties"""
-        print("Method has been called")
 
         # Color Control
         uc, color = imgui.color_edit4("Color##color{}'".format(self.unique_name), *self.default_color)
         if uc:
             self.default_color = color
-            print("Color has been changed")
 
         # Diffuse
         ud, diffuse = imgui.slider_float(
