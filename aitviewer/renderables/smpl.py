@@ -163,7 +163,6 @@ class SMPLSequence(Node):
                 color=(1.0, 177 / 255, 1 / 255, 1.0),
                 name="Skeleton",
             )
-           # self.skeleton_default_color = self.skeleton_seq.color
             self._add_node(self.skeleton_seq)
 
         # First convert the relative joint angles to global joint angles in rotation matrix form.
@@ -199,7 +198,6 @@ class SMPLSequence(Node):
             color=kwargs.get("color", (160 / 255, 160 / 255, 160 / 255, 1.0)),
             name="Mesh",
         )
-        #self.mesh_default_color = self.mesh_seq.color
         self._add_node(self.mesh_seq)
 
         # Save view mode state to restore when exiting edit mode.
