@@ -549,7 +549,17 @@ class Node(object):
 
     def gui_mode_view(self, imgui):
         """Render custom GUI for view mode"""
-        pass
+        # Added button to toggle between original and edited motion
+        if imgui.button(
+        "View Original Motion" if not self.show_original_motion else "View Edited Motion"
+        ):
+            self.show_original_motion = not self.show_original_motion
+            self.redraw()
+        imgui.spacing()
+        imgui.separator()
+        imgui.spacing()
+        self.gui_affine(imgui)
+        self.gui_animation(imgui)
 
     def gui_context_menu(self, imgui, x: int, y: int):
         _, self.enabled = imgui.checkbox("Enabled", self.enabled)

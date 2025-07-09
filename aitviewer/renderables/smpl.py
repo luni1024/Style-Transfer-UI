@@ -143,6 +143,8 @@ class SMPLSequence(Node):
         self.keyframes_indices = keyframes_indices
         self.keyframes_joints = keyframes_joints
 
+        self.show_original_motion = False
+
         # Edit mode
         self.gui_modes.update({"edit": {"title": " Edit", "fn": self.gui_mode_edit, "icon": "\u0081"}})
 
@@ -434,6 +436,76 @@ class SMPLSequence(Node):
 
     def fk(self, current_frame_only=False):
         """Get joints and/or vertices from the poses."""
+        if getattr(self, "show_original_motion", False) and self.original_poses is not None:
+            # Use original poses for rendering
+            poses = (
+                self.original_poses.to(dtype=self.dtype, device=self.device)
+                if isinstance(self.original_poses, torch.Tensor)
+                else torch.tensor(self.original_poses, dtype=self.dtype, device=self.device)
+            )
+            poses_root = poses[:, :3]
+            poses_body = poses[:, 3:3+self.poses_body.shape[1]]
+
+            offset = 3 + self.poses_body.shape[1]
+            poses_left_hand = None
+            poses_right_hand = None
+            if self.poses_left_hand is not None:
+                poses_left_hand = poses[:, offset:offset+self.poses_left_hand.shape[1]]
+                offset += self.poses_left_hand.shape[1]
+            if self.poses_right_hand is not None:
+                poses_right_hand = poses[:, offset:offset+self.poses_right_hand.shape[1]]
+
+            if current_frame_only:
+                poses_root = poses_root[self.current_frame_id][None, :]
+                poses_body = poses_body[self.current_frame_id][None, :]
+                poses_left_hand = (
+                    None if poses_left_hand is None else poses_left_hand[self.current_frame_id][None, :]
+                )
+                poses_right_hand = (
+                    None if poses_right_hand is None else poses_right_hand[self.current_frame_id][None, :]
+                )
+                trans = self.trans[self.current_frame_id][None, :]
+                betas = self.betas[self.current_frame_id][None, :] if self.betas.shape[0] == self.n_frames else self.betas
+                if betas.shape[0] != 1:
+                    betas = betas[0][None, :]
+            else:
+                trans = self.trans
+                betas = self.betas
+
+            if self.smpl_layer.model_type == "mano":
+                verts, joints = self.smpl_layer(
+                    hand_pose=poses_body,
+                    betas=betas,
+                    global_orient=poses_root,
+                    trans=trans,
+                    mano=True,
+                )
+            else:
+                verts, joints = self.smpl_layer(
+                    poses_root=poses_root,
+                    poses_body=poses_body,
+                    poses_left_hand=poses_left_hand,
+                    poses_right_hand=poses_right_hand,
+                    betas=betas,
+                    trans=trans,
+                )
+
+            if self.post_fk_func:
+                verts, joints = self.post_fk_func(self, verts, joints, current_frame_only)
+
+            skeleton = (
+                self.smpl_layer.skeletons()["body"].T
+                if not self.smpl_layer.model_type == "mano"
+                else self.smpl_layer.skeletons()["all"].T
+            )
+            faces = self.smpl_layer.bm.faces.astype(np.int64)
+            joints = joints[:, : skeleton.shape[0]]
+
+            if current_frame_only:
+                return c2c(verts)[0], c2c(joints)[0], c2c(faces), c2c(skeleton)
+            else:
+                return c2c(verts), c2c(joints), c2c(faces), c2c(skeleton)
+        
         if current_frame_only:
             # Use current frame data.
             if self._edit_mode:
@@ -632,6 +704,7 @@ class SMPLSequence(Node):
         self._selected_mode = selected_mode
 
         if self.selected_mode == "edit":
+            self.show_original_motion = False
             self.rbs.enabled = True
             self.rbs.is_selectable = False
             self._edit_pose = self.poses[self.current_frame_id].clone()
