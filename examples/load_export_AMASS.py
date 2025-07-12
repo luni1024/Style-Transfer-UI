@@ -7,38 +7,35 @@ from aitviewer.renderables.point_clouds import PointClouds
 from aitviewer.renderables.smpl import SMPLSequence
 from aitviewer.viewer import Viewer
 
-global dirlist
-
-def mapdirhelper(dir: str, prefix: str, depthlim: int, depthcur: int):
-    global dirlist
-
+def mapdirhelper(dir: str, prefix: str):
     dirlist = os.listdir(dir)
     direnum = enumerate(dirlist)
     
     for index, file in direnum:
-        print(prefix + "[" + str(index) + "]" + file)
+        print(f"{prefix} [ {str(index)} ] {file}")
 
-def mapdir(dir: str, depth: int):
+    return dirlist
+
+def mapdir(dir: str):
     print(dir)
-    mapdirhelper(dir, "", depth, 1)
+    return mapdirhelper(dir, "")
 
 file_dir = os.path.realpath(os.path.dirname(__file__))
 Styletransfer_dir = os.path.split(file_dir)[0]
 export_dir = os.path.join(Styletransfer_dir, "export")   # this approach ensures one does not need to be in the `examples`-directory to open this file
 examples_dir = os.path.join(Styletransfer_dir, "examples")
-print("file_dir: " + file_dir)                    # <- useful for debugging
-print("Styletransfer_dir: " + Styletransfer_dir)  # <- useful for debugging
-print("export_dir: " + export_dir)                # <- useful for debugging
-print("examples_dir: " + examples_dir)            # <- useful for debugging
+#print("file_dir: " + file_dir)                    # <- useful for debugging
+#print("Styletransfer_dir: " + Styletransfer_dir)  # <- useful for debugging
+#print("export_dir: " + export_dir)                # <- useful for debugging
+#print("examples_dir: " + examples_dir)            # <- useful for debugging
 os.chdir(examples_dir)
 
 directory = os.path.join(export_dir, "AMASS")
-mapdir(directory, 1)
-filenäim = dirlist[int(input("Please enter the index of the file you'd like to open: "))]
+filename = mapdir(directory)[int(input("Please enter the index of the file you'd like to open: "))]
 
 
-print( "\n" + "Opening " + filenäim)
-dir_to_open = os.path.join(directory, filenäim)
+print( "\n" + "Opening " + filename)
+dir_to_open = os.path.join(directory, filename)
 print("\n" + "from: " + dir_to_open)     # <- useful for debugging
 
 c = (149 / 255, 85 / 255, 149 / 255, 0.5)
