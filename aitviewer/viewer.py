@@ -20,6 +20,7 @@ from aitviewer.remote.message import Message
 from aitviewer.renderables.billboard import Billboard
 from aitviewer.renderables.meshes import Meshes, VariableTopologyMeshes
 from aitviewer.renderables.point_clouds import PointClouds
+from aitviewer.renderables.smpl import SMPLSequence
 from aitviewer.renderer import Renderer, Viewport
 from aitviewer.scene.camera import PinholeCamera, ViewerCamera
 from aitviewer.scene.node import Node
@@ -541,14 +542,15 @@ class Viewer(moderngl_window.WindowConfig):
                 self.scene.current_frame_id = (self.scene.current_frame_id + frames) % self.scene.n_frames
                 self._last_frame_rendered_at += frames * (1.0 / self.playback_fps)
 
-        seq_amass = self.scene.get_node_by_uid(1)
-        
-        if self.scene.current_frame_id in seq_amass.keyframes_indices:
-            seq_amass.skeleton_seq.color = (0, 255, 0 , 1)
-            seq_amass.mesh_seq.color = (0, 255, 0 , 0.5)
-        else:
-            seq_amass.skeleton_seq.color = seq_amass.skeleton_seq.default_color
-            seq_amass.mesh_seq.color = seq_amass.mesh_seq.default_color
+        # SMPL type nodes have highlightable keyframes
+        seq_smpl = self.scene.get_node_by_class(SMPLSequence)
+        if seq_smpl != None:
+            if self.scene.current_frame_id in seq_smpl.keyframes_indices:
+                seq_smpl.skeleton_seq.color = (0, 255, 0 , 1)
+                seq_smpl.mesh_seq.color = (0, 255, 0 , 0.5)
+            else:
+                seq_smpl.skeleton_seq.color = seq_smpl.skeleton_seq.default_color
+                seq_smpl.mesh_seq.color = seq_smpl.mesh_seq.default_color
 
         # Update camera matrices that will be used for rendering
         if isinstance(self.scene.camera, ViewerCamera):
