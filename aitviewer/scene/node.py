@@ -555,11 +555,7 @@ class Node(object):
         ):
             self.show_original_motion = not self.show_original_motion
             self.redraw()
-        imgui.spacing()
-        imgui.separator()
-        imgui.spacing()
-        self.gui_affine(imgui)
-        self.gui_animation(imgui)
+        
 
     def gui_context_menu(self, imgui, x: int, y: int):
         _, self.enabled = imgui.checkbox("Enabled", self.enabled)
