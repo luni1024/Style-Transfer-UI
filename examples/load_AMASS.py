@@ -12,16 +12,13 @@ from aitviewer.viewer import Viewer
 if __name__ == "__main__":
     # Load an AMASS sequence and make sure it's sampled at 60 fps. This automatically loads the SMPL-H model.
     # We set transparency to 0.5 and render the joint coordinates systems.
-    path = "ACCAD/Female1Running_c3d/C2 - Run to stand_poses.npz"
+    path = "ACCAD/Female1Running_c3d/C20 -  run to jump to walk_poses.npz"
     c = (149 / 255, 85 / 255, 149 / 255, 0.5)
 
     with open("../babel_humanml3d_kitml_ori.json") as json_data:
         prompts = json.load(json_data)
-        prompt = prompts[path[:-4]]
-        annotations = prompt["annotations"]
-        annotation0 = annotations[0]
-        annotation = annotation0["text"]
-        print(annotation)
+        seq_prompt = prompts[path[:-4]] # :-4 removes the .npz from the path
+        annotations = seq_prompt["annotations"]
 
     seq_amass = SMPLSequence.from_amass(
         npz_data_path=os.path.join(C.datasets.amass, path),  # AMASS Running_motion.npz #Female1Running_c3d/C2 - Run to stand_poses.npz #AMASS Stand_poses (2 close frames)_motion
@@ -29,7 +26,7 @@ if __name__ == "__main__":
         color=c,
         name="AMASS Running",
         show_joint_angles=True,
-        annotation=annotation,
+        annotations=annotations,
     )
 
 
