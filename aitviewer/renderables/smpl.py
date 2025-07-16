@@ -54,7 +54,7 @@ class SMPLSequence(Node):
         original_poses=None,
         keyframes_indices=np.array([], dtype=int),
         keyframes_joints=np.array([]),
-        annotation=None,
+        annotations=None,
         **kwargs,
     ):
         """
@@ -205,7 +205,10 @@ class SMPLSequence(Node):
         self._view_mode_color = self.mesh_seq.color
         self._view_mode_joint_angles = self._show_joint_angles
 
-        self.annotation = annotation
+        # Prompt mode
+        self.gui_modes.update({"prompt": {"title": " Prompts", "fn": self.gui_mode_prompt, "icon": "#"}})
+
+        self.annotations = annotations
 
     @classmethod
     def from_amass(
@@ -726,14 +729,6 @@ class SMPLSequence(Node):
                     self._gui_joint(imgui, c, tree)
                 imgui.tree_pop()
 
-    def gui_stats(self, imgui):
-        if self.annotation is not None:
-            imgui.text("Annotation: ")
-            imgui.same_line()
-            imgui.input_text("", self.annotation)
-        super().gui_stats(imgui)
-
-
     def gui_mode_edit(self, imgui):
         skel = self.smpl_layer.skeletons()["body"].cpu().numpy()
 
@@ -775,6 +770,30 @@ class SMPLSequence(Node):
             self._edit_pose = self.poses[self.current_frame_id]
             self._edit_pose_dirty = False
             self.redraw(current_frame_only=True)
+
+    def gui_mode_prompt(self, imgui):
+        if self.annotations is not None:
+            second = self.current_frame_id / 60
+            first_index = len(self.annotations)
+            for i, annotation in enumerate(self.annotations):
+                if annotation["start"] <= second and annotation["end"] >= second:
+                    if i > first_index:
+                        if(imgui.tree_node(f'Prompt {i}: {annotation["start"]} - {annotation["end"]}')):
+                            imgui.text(annotation["text"])
+                            imgui.tree_pop()
+                    else:
+                        #imgui.input_text("", annotation["text"])
+                        imgui.push_font(None)
+                        imgui.text(f'Main Prompt: {annotation["text"]}')
+                        imgui.pop_font()
+                        first_index = i
+
+
+        imgui.slider_float(
+                "Second##r_{}".format(self.unique_name),
+                second,
+                min_value=0,
+                max_value=(self.n_frames - 1)/60,)
 
     def gui_io(self, imgui):
         # uses export_to_AMASS now
