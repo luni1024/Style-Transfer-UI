@@ -729,14 +729,6 @@ class SMPLSequence(Node):
                     self._gui_joint(imgui, c, tree)
                 imgui.tree_pop()
 
-    def gui_stats(self, imgui):
-        if self.annotation is not None:
-            imgui.text("Annotation: ")
-            imgui.same_line()
-            imgui.input_text("", self.annotation)
-        super().gui_stats(imgui)
-
-
     def gui_mode_edit(self, imgui):
         skel = self.smpl_layer.skeletons()["body"].cpu().numpy()
 
@@ -779,7 +771,6 @@ class SMPLSequence(Node):
             self._edit_pose_dirty = False
             self.redraw(current_frame_only=True)
 
-
     def gui_stats(self,imgui):
         super().gui_stats(imgui)
         imgui.text_wrapped(f"Keyframes: {np.unique(self.keyframes_indices)}")
@@ -812,7 +803,6 @@ class SMPLSequence(Node):
                 second,
                 min_value=0,
                 max_value=(self.n_frames - 1)/60,)
-
 
     def gui_io(self, imgui):
         # uses export_to_AMASS now
