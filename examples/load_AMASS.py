@@ -15,7 +15,7 @@ if __name__ == "__main__":
     path = "ACCAD/Female1Running_c3d/C2 - Run to stand_poses.npz"
     c = (149 / 255, 85 / 255, 149 / 255, 0.5)
 
-    with open("babel_humanml3d_kitml_ori.json") as json_data:
+    with open("../babel_humanml3d_kitml_ori.json") as json_data:
         prompts = json.load(json_data)
         prompt = prompts[path[:-4]]
         annotations = prompt["annotations"]
