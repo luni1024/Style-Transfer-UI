@@ -107,6 +107,8 @@ class SMPLSequence(Node):
         self.poses_left_hand = to_torch(poses_left_hand, dtype=dtype, device=device)
         self.poses_right_hand = to_torch(poses_right_hand, dtype=dtype, device=device)
 
+        self.original_poses = to_torch(original_poses, dtype=dtype, device=device)
+        
         poses_root = poses_root if poses_root is not None else torch.zeros([len(poses_body), 3])
         betas = betas if betas is not None else torch.zeros([1, self.smpl_layer.num_betas])
         trans = trans if trans is not None else torch.zeros([len(poses_body), 3])
@@ -436,13 +438,9 @@ class SMPLSequence(Node):
 
     def fk(self, current_frame_only=False):
         """Get joints and/or vertices from the poses."""
-        if getattr(self, "show_original_motion", False) and self.original_poses is not None:
+        if self.show_original_motion:
             # Use original poses for rendering
-            poses = (
-                self.original_poses.to(dtype=self.dtype, device=self.device)
-                if isinstance(self.original_poses, torch.Tensor)
-                else torch.tensor(self.original_poses, dtype=self.dtype, device=self.device)
-            )
+            poses = self.original_poses
             poses_root = poses[:, :3]
             poses_body = poses[:, 3:3+self.poses_body.shape[1]]
 
@@ -472,40 +470,6 @@ class SMPLSequence(Node):
                 trans = self.trans
                 betas = self.betas
 
-            if self.smpl_layer.model_type == "mano":
-                verts, joints = self.smpl_layer(
-                    hand_pose=poses_body,
-                    betas=betas,
-                    global_orient=poses_root,
-                    trans=trans,
-                    mano=True,
-                )
-            else:
-                verts, joints = self.smpl_layer(
-                    poses_root=poses_root,
-                    poses_body=poses_body,
-                    poses_left_hand=poses_left_hand,
-                    poses_right_hand=poses_right_hand,
-                    betas=betas,
-                    trans=trans,
-                )
-
-            if self.post_fk_func:
-                verts, joints = self.post_fk_func(self, verts, joints, current_frame_only)
-
-            skeleton = (
-                self.smpl_layer.skeletons()["body"].T
-                if not self.smpl_layer.model_type == "mano"
-                else self.smpl_layer.skeletons()["all"].T
-            )
-            faces = self.smpl_layer.bm.faces.astype(np.int64)
-            joints = joints[:, : skeleton.shape[0]]
-
-            if current_frame_only:
-                return c2c(verts)[0], c2c(joints)[0], c2c(faces), c2c(skeleton)
-            else:
-                return c2c(verts), c2c(joints), c2c(faces), c2c(skeleton)
-        
         if current_frame_only:
             # Use current frame data.
             if self._edit_mode:
@@ -527,6 +491,7 @@ class SMPLSequence(Node):
                 betas = self.betas[self.current_frame_id][None, :]
             else:
                 betas = self.betas
+                
         else:
             # Use the whole sequence.
             if self._edit_mode:
@@ -848,6 +813,16 @@ class SMPLSequence(Node):
             path = os.path.join(dir, self.name)
             self.export_to_AMASS(path)
             print(f'Exported AMASS sequence to "{path}_motion.npz"')
+
+    def gui_mode_view(self, imgui):
+            """Render custom GUI for view mode"""
+            # Added button to toggle between original and edited motion
+            if imgui.button(
+            "View Original Motion" if not self.show_original_motion else "View Edited Motion"
+            ):
+                self.show_original_motion = not self.show_original_motion
+                self.redraw()
+        
 
     def gui_context_menu(self, imgui, x: int, y: int):
         if self.edit_mode and self._edit_joint is not None:
