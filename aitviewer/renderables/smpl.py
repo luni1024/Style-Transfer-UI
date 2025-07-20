@@ -208,7 +208,7 @@ class SMPLSequence(Node):
         # Prompt mode
         self.gui_modes.update({"prompt": {"title": " Prompts", "fn": self.gui_mode_prompt, "icon": "#"}})
 
-        self.annotations = annotations
+        self.annotations = annotations if annotations is not None else []
 
     @classmethod
     def from_amass(
@@ -777,22 +777,27 @@ class SMPLSequence(Node):
         imgui.text_wrapped(f"Keyframes: {np.unique(self.keyframes_indices)}")
 
     def gui_mode_prompt(self, imgui):
-        if self.annotations is not None:
-            second = self.current_frame_id / 60
-            first_index = len(self.annotations)
-            for i, annotation in enumerate(self.annotations):
-                if annotation["start"] <= second and annotation["end"] >= second:
-                    if i > first_index:
-                        if(imgui.tree_node(f'Prompt {i}: {annotation["start"]} - {annotation["end"]}')):
-                            imgui.text(annotation["text"])
-                            imgui.tree_pop()
-                    else:
-                        #imgui.input_text("", annotation["text"])
-                        imgui.push_font(None)
-                        imgui.text(f'Main Prompt: {annotation["text"]}')
-                        imgui.pop_font()
-                        first_index = i
+        second = self.current_frame_id / 60
+        first_index = len(self.annotations)
+        for i, annotation in enumerate(self.annotations):
+            if annotation["start"] <= second and annotation["end"] >= second:
+                if i > first_index:
+                    if imgui.tree_node(f'Prompt {i}: {annotation["start"]} - {annotation["end"]}'):
+                        imgui.text_wrapped(annotation["text"])
+                        if imgui.button("Delete"):
+                            pass
+                        imgui.tree_pop()
+                else:
+                    if imgui.tree_node(f'Prompt {i}: {annotation["start"]} - {annotation["end"]}', flags=imgui.TREE_NODE_DEFAULT_OPEN|imgui.TREE_NODE_FRAMED):
+                        imgui.text_wrapped(annotation["text"])
+                        if imgui.button("Delete"):
+                            pass
+                        imgui.tree_pop()
+                    first_index = i
 
+        if imgui.button("Add"):
+            #imgui.input_text("", annotation["text"])
+            pass
 
         imgui.slider_float(
                 "Second##r_{}".format(self.unique_name),
