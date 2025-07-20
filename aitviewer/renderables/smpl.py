@@ -261,6 +261,7 @@ class SMPLSequence(Node):
 
         keyframes_indices = body_data.get("keyframes_indices", np.array([]))
         original_poses = body_data.get("original_poses", None)
+        annotations = body_data.get("annotations", None)
 
         return cls(
             poses_body=poses[:, i_root_end:i_body_end],
