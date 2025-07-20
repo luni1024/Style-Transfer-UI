@@ -17,8 +17,8 @@ if __name__ == "__main__":
 
     with open("../babel_humanml3d_kitml_ori.json") as json_data:
         prompts = json.load(json_data)
-        seq_prompt = prompts[path[:-4]] # :-4 removes the .npz from the path
-        annotations = seq_prompt["annotations"]
+        seq_prompt = prompts.get(path[:-4]) # :-4 removes the .npz from the path
+        annotations = None if seq_prompt is None else seq_prompt["annotations"]
 
     seq_amass = SMPLSequence.from_amass(
         npz_data_path=os.path.join(C.datasets.amass, path),  # AMASS Running_motion.npz #Female1Running_c3d/C2 - Run to stand_poses.npz #AMASS Stand_poses (2 close frames)_motion
