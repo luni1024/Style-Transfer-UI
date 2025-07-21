@@ -783,25 +783,29 @@ class SMPLSequence(Node):
     def gui_mode_prompt(self, imgui):
         second = self.current_frame_id / 60
         first_index = len(self.annotations)
-        for i, annotation in enumerate(self.annotations):
-            if annotation["start"] <= second and annotation["end"] >= second:
-                if i > first_index:
-                    if imgui.tree_node(f'Prompt {i}: {annotation["start"]} - {annotation["end"]}'):
-                        imgui.text_wrapped(annotation["text"])
-                        if imgui.button("Delete"):
-                            pass
-                        imgui.tree_pop()
-                else:
-                    if imgui.tree_node(f'Prompt {i}: {annotation["start"]} - {annotation["end"]}', flags=imgui.TREE_NODE_DEFAULT_OPEN|imgui.TREE_NODE_FRAMED):
-                        imgui.text_wrapped(annotation["text"])
-                        if imgui.button("Delete"):
-                            pass
-                        imgui.tree_pop()
-                    first_index = i
+        sorted_annotations = sorted(self.annotations, key=lambda elem: elem["start"])
 
-        if imgui.button("Add"):
-            #imgui.input_text("", annotation["text"])
-            pass
+        for i, annotation in enumerate(sorted_annotations):
+            if i > first_index:
+                if imgui.tree_node(f'Prompt {i}: {annotation["start"]} - {annotation["end"]}'):
+                    imgui.text_wrapped(annotation["text"])
+                    if imgui.button("Delete"):
+                        self.annotations.remove(annotation)
+                    imgui.tree_pop()
+            else:
+                if imgui.tree_node(f'Prompt {i}: {annotation["start"]} - {annotation["end"]}', flags=imgui.TREE_NODE_DEFAULT_OPEN|imgui.TREE_NODE_FRAMED):      # This part is for the first Prompt, which gets a different Formatting
+                    imgui.text_wrapped(annotation["text"])
+                    if imgui.button("Delete"):
+                        self.annotations.remove(annotation)
+                    imgui.tree_pop()
+                first_index = i
+
+        Add_pressed = imgui.button("Add")
+        imgui.same_line()
+        text_changed, Prompt = imgui.input_text("", "Enter Prompt:")
+        if text_changed and Add_pressed:
+            annotation = {'seg_id': 'user', 'text': Prompt, 'start': round(second, 3), 'end': round((second + 0.5), 3)}
+            self.annotations.append(annotation)
 
         imgui.slider_float(
                 "Second##r_{}".format(self.unique_name),
