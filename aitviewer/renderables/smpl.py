@@ -55,6 +55,8 @@ class SMPLSequence(Node):
         keyframes_indices=np.array([], dtype=int),
         keyframes_joints=np.array([]),
         annotations=None,
+        prompt_given=False,
+        prompt_input=None,
         **kwargs,
     ):
         """
@@ -800,13 +802,15 @@ class SMPLSequence(Node):
                     imgui.tree_pop()
                 first_index = i
 
-        Add_pressed = imgui.button("Add")
+        text_input_changed, Prompt = imgui.input_text("", 'Enter Prompt:')
+        if text_input_changed:
+            self.prompt_inputted = True
+            self.prompt_input = Prompt
         imgui.same_line()
-        text_changed, Prompt = imgui.input_text("", "Enter Prompt:")
-        if text_changed and Add_pressed:
-            annotation = {'seg_id': 'user', 'text': Prompt, 'start': round(second, 3), 'end': round((second + 0.5), 3)}
-            self.annotations.append(annotation)
-
+        if imgui.button("Add") and self.prompt_inputted:
+            self.annotations.append({'seg_id': 'user', 'text': self.prompt_input, 'start': round(second, 3), 'end': round(second + 0.5, 3)})
+        
+        
         imgui.slider_float(
                 "Second##r_{}".format(self.unique_name),
                 second,
