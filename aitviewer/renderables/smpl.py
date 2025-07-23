@@ -398,7 +398,7 @@ class SMPLSequence(Node):
             gender=c2c(np.array(self.smpl_layer.bm.gender)),
             keyframes_indices=c2c(self.keyframes_indices),
             keyframes_joints=c2c(self.keyframes_joints),
-            annotations=c2c(self.annotations),
+            annotations=c2c(np.array(self.annotations)),
         )
         
         self.keyframes_indices=np.array([], dtype=int)
