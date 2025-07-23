@@ -438,43 +438,18 @@ class SMPLSequence(Node):
 
     def fk(self, current_frame_only=False):
         """Get joints and/or vertices from the poses."""
-        if self.show_original_motion:
-            # Use original poses for rendering
-            poses = self.original_poses
-            poses_root = poses[:, :3]
-            poses_body = poses[:, 3:3+self.poses_body.shape[1]]
-
-            offset = 3 + self.poses_body.shape[1]
-            poses_left_hand = None
-            poses_right_hand = None
-            if self.poses_left_hand is not None:
-                poses_left_hand = poses[:, offset:offset+self.poses_left_hand.shape[1]]
-                offset += self.poses_left_hand.shape[1]
-            if self.poses_right_hand is not None:
-                poses_right_hand = poses[:, offset:offset+self.poses_right_hand.shape[1]]
-
-            if current_frame_only:
-                poses_root = poses_root[self.current_frame_id][None, :]
-                poses_body = poses_body[self.current_frame_id][None, :]
-                poses_left_hand = (
-                    None if poses_left_hand is None else poses_left_hand[self.current_frame_id][None, :]
-                )
-                poses_right_hand = (
-                    None if poses_right_hand is None else poses_right_hand[self.current_frame_id][None, :]
-                )
-                trans = self.trans[self.current_frame_id][None, :]
-                betas = self.betas[self.current_frame_id][None, :] if self.betas.shape[0] == self.n_frames else self.betas
-                if betas.shape[0] != 1:
-                    betas = betas[0][None, :]
-            else:
-                trans = self.trans
-                betas = self.betas
-
         if current_frame_only:
-            # Use current frame data.
+            # Use current frame data
             if self._edit_mode:
                 poses_root = self._edit_pose[:3][None, :]
                 poses_body = self._edit_pose[3:][None, :]
+            elif self.show_original_motion:
+                # Use original poses for rendering
+                poses = self.original_poses
+                poses_root = poses[:, :3]
+                poses_root = poses_root[self.current_frame_id][None, :]
+                poses_body = poses[:, 3:3+self.poses_body.shape[1]]
+                poses_body = poses_body[self.current_frame_id][None, :]
             else:
                 poses_body = self.poses_body[self.current_frame_id][None, :]
                 poses_root = self.poses_root[self.current_frame_id][None, :]
@@ -493,19 +468,34 @@ class SMPLSequence(Node):
                 betas = self.betas
                 
         else:
-            # Use the whole sequence.
+            # Use the whole sequence
             if self._edit_mode:
                 poses_root = self.poses_root.clone()
                 poses_body = self.poses_body.clone()
-
                 poses_root[self.current_frame_id] = self._edit_pose[:3]
                 poses_body[self.current_frame_id] = self._edit_pose[3:]
+            elif self.show_original_motion:
+                # Use original poses for rendering
+                poses = self.original_poses
+                poses_root = poses[:, :3]
+                poses_body = poses[:, 3:3+self.poses_body.shape[1]]
             else:
                 poses_body = self.poses_body
                 poses_root = self.poses_root
 
-            poses_left_hand = self.poses_left_hand
-            poses_right_hand = self.poses_right_hand
+            if self.show_original_motion:
+                offset = 3 + self.poses_body.shape[1]
+                poses_left_hand = None
+                poses_right_hand = None
+                if self.poses_left_hand is not None:
+                    poses_left_hand = poses[:, offset:offset+self.poses_left_hand.shape[1]]
+                    offset += self.poses_left_hand.shape[1]
+                if self.poses_right_hand is not None:
+                    poses_right_hand = poses[:, offset:offset+self.poses_right_hand.shape[1]]
+            else:
+                poses_left_hand = self.poses_left_hand
+                poses_right_hand = self.poses_right_hand
+            
             trans = self.trans
             betas = self.betas
 
