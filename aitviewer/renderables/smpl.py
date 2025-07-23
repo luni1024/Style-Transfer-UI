@@ -370,8 +370,8 @@ class SMPLSequence(Node):
         )
         self.keyframes_indices=np.array([], dtype=int)
 
-# this export function saves a motion in the AMASS format, where there is only one poses array
     def export_to_AMASS(self, file: Union[IO, str]):
+        '''Exports the motion to a .npz file in the AMASS format (containing only one poses array).'''
         verts, all_joints = self.smpl_layer(
                 poses_root=self.poses_root,
                 poses_body=self.poses_body,
@@ -398,6 +398,7 @@ class SMPLSequence(Node):
             gender=c2c(np.array(self.smpl_layer.bm.gender)),
             keyframes_indices=c2c(self.keyframes_indices),
             keyframes_joints=c2c(self.keyframes_joints),
+            annotations=c2c(self.annotations),
         )
         
         self.keyframes_indices=np.array([], dtype=int)
