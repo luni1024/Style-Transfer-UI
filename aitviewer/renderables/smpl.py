@@ -55,8 +55,7 @@ class SMPLSequence(Node):
         keyframes_indices=np.array([], dtype=int),
         keyframes_joints=np.array([]),
         annotations=None,
-        prompt_given=False,
-        prompt_input=None,
+        prompt=None,
         **kwargs,
     ):
         """
@@ -209,6 +208,7 @@ class SMPLSequence(Node):
 
         # Prompt mode
         self.gui_modes.update({"prompt": {"title": " Prompts", "fn": self.gui_mode_prompt, "icon": "#"}})
+        self.prompt = prompt if prompt is not None else {'inputted': False, 'value': None, 'start': {'changed': False,'value': 0.0}, 'end': {'changed': False,'value': 0.0}}
 
         self.annotations = list(annotations) if annotations is not None else []
 
@@ -802,15 +802,48 @@ class SMPLSequence(Node):
                     imgui.tree_pop()
                 first_index = i
 
-        text_input_changed, Prompt = imgui.input_text("", 'Enter Prompt:')
+
+        ## Add-Button & Start/End Sliders:
+        
+        default = self.prompt['value'] if self.prompt['value'] is not None else 'Enter Prompt:'
+        
+        # Prompt_input_field
+        text_input_changed, Prompt = imgui.input_text("", default)
+        
+        # Slidervariables
+        start_val = self.prompt['start']['value']
+        end_val = self.prompt['end']['value']
+        start_changed = self.prompt['start']['changed']
+        end_changed = self.prompt['end']['changed']
+        if start_changed:
+            end_val = max(start_val, end_val)
+        if end_changed:
+            start_val = min(start_val, end_val)
+
+        # Updating the Prompt(-Input)
         if text_input_changed:
-            self.prompt_inputted = True
-            self.prompt_input = Prompt
+            self.prompt['inputted'] = True
+            self.prompt['value'] = Prompt
+
+        # Add-Button
+        Enter_pressed = imgui.is_key_pressed(imgui.KEY_ENTER)
         imgui.same_line()
-        if imgui.button("Add") and self.prompt_inputted:
-            self.annotations.append({'seg_id': 'user', 'text': self.prompt_input, 'start': round(second, 3), 'end': round(second + 0.5, 3)})
-        
-        
+        if (imgui.button("Add") or Enter_pressed) and self.prompt['inputted']:
+            self.annotations.append({'seg_id': 'user', 'text': self.prompt['value'], 'start': round(self.prompt['start']['value'], 3), 'end': round(self.prompt['end']['value'], 3)})
+            self.prompt['inputted'] = False
+            self.prompt['value'] = None
+
+        # Sliders
+        self.prompt['start']['changed'], self.prompt['start']['value'] = imgui.slider_float(f'Start',
+                           start_val,
+                           min_value=0,
+                           max_value=(self.n_frames - 1)/60)
+
+        self.prompt['end']['changed'], self.prompt['end']['value'] = imgui.slider_float(f'End',
+                           end_val,
+                           min_value=0,
+                           max_value=(self.n_frames - 1)/60)
+
         imgui.slider_float(
                 "Second##r_{}".format(self.unique_name),
                 second,
