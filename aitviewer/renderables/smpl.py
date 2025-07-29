@@ -1017,3 +1017,12 @@ class SMPLSequence(Node):
 
         self.n_frames = len(self.poses_body)
         self.redraw()
+
+
+    def render(self, **kwargs):
+        if self.current_frame_id in self.keyframes_indices:
+            self.skeleton_seq.color = (0, 255, 0 , 1)
+            self.mesh_seq.color = (0, 255, 0 , 0.5)
+        else:
+            self.skeleton_seq.color = self.skeleton_seq.default_color
+            self.mesh_seq.color = self.mesh_seq.default_color
