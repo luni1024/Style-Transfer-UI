@@ -208,7 +208,7 @@ class SMPLSequence(Node):
         # Prompt mode
         self.gui_modes.update({"prompt": {"title": " Prompts", "fn": self.gui_mode_prompt, "icon": "#"}})
 
-        self.annotations = annotations if annotations is not None else []
+        self.annotations = list(annotations) if annotations is not None else []
 
     @classmethod
     def from_amass(
@@ -220,6 +220,7 @@ class SMPLSequence(Node):
         log=True,
         fps_out=None,
         z_up=True,
+        annotations=None,
         **kwargs,
     ):
         """Load a sequence downloaded from the AMASS website."""
@@ -261,7 +262,8 @@ class SMPLSequence(Node):
 
         keyframes_indices = body_data.get("keyframes_indices", np.array([], dtype=int))
         original_poses = body_data.get("original_poses", None)
-        annotations = body_data.get("annotations", None)
+
+        annotations = body_data.get("annotations", None) 
 
         return cls(
             poses_body=poses[:, i_root_end:i_body_end],
@@ -274,6 +276,7 @@ class SMPLSequence(Node):
             z_up=z_up,
             keyframes_indices=keyframes_indices,
             original_poses=original_poses,
+            annotations=annotations,
             **kwargs,
         )
 
