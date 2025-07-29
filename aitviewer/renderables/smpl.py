@@ -224,7 +224,7 @@ class SMPLSequence(Node):
     ):
         """Load a sequence downloaded from the AMASS website."""
 
-        body_data = np.load(npz_data_path)
+        body_data = np.load(npz_data_path, allow_pickle=True)
         if smpl_layer is None:
             smpl_layer = SMPLLayer(model_type="smplh", gender=body_data["gender"].item(), device=C.device)
 
