@@ -765,6 +765,10 @@ class SMPLSequence(Node):
             self._edit_pose_dirty = False
             self.redraw(current_frame_only=True)
 
+    def gui_stats(self,imgui):
+        super().gui_stats(imgui)
+        imgui.text_wrapped(f"Keyframes: {np.unique(self.keyframes_indices)}")
+
     def gui_io(self, imgui):
         # uses export_to_AMASS now
         if imgui.button("Export sequence to NPZ"):
