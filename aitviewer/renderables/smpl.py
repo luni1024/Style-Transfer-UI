@@ -443,13 +443,6 @@ class SMPLSequence(Node):
             if self._edit_mode:
                 poses_root = self._edit_pose[:3][None, :]
                 poses_body = self._edit_pose[3:][None, :]
-            elif self.show_original_motion:
-                # Use original poses for rendering
-                poses = self.original_poses
-                poses_root = poses[:, :3]
-                poses_root = poses_root[self.current_frame_id][None, :]
-                poses_body = poses[:, 3:3+self.poses_body.shape[1]]
-                poses_body = poses_body[self.current_frame_id][None, :]
             else:
                 poses_body = self.poses_body[self.current_frame_id][None, :]
                 poses_root = self.poses_root[self.current_frame_id][None, :]
