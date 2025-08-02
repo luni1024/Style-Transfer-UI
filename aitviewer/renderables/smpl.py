@@ -53,7 +53,6 @@ class SMPLSequence(Node):
         icon="\u0093",
         original_poses=None,
         keyframes_indices=np.array([], dtype=int),
-        keyframes_joints=np.array([]),
         annotations=None,
         **kwargs,
     ):
@@ -144,7 +143,6 @@ class SMPLSequence(Node):
         self.original_poses = to_torch(self.original_poses, dtype=dtype, device=device)
 
         self.keyframes_indices = keyframes_indices
-        self.keyframes_joints = keyframes_joints
 
         self.show_original_motion = False
 
