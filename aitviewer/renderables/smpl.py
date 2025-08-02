@@ -388,38 +388,65 @@ class SMPLSequence(Node):
         self.keyframes_indices=np.array([], dtype=int)
 
     def export_to_AMASS(self, file: Union[IO, str]):
-        '''Exports the motion to a .npz file in the AMASS format (containing only one poses array).'''
-        verts, all_joints = self.smpl_layer(
-                poses_root=self.poses_root,
-                poses_body=self.poses_body,
-                poses_left_hand=self.poses_left_hand,
-                poses_right_hand=self.poses_right_hand,
-                betas=self.betas,
-                trans=self.trans,
-            )
-        
-        whole_skeleton = self.smpl_layer.skeletons()["all"].T
-        all_joints = all_joints[:, : whole_skeleton.shape[0]]
-         
+
         self.keyframes_indices = np.unique(self.keyframes_indices)
-        self.keyframes_joints = all_joints[self.keyframes_indices]
+        keyframes_joints = self.joints[self.keyframes_indices]
+
+        if self._z_up:
+            rot_zup_to_yup = Rotation.from_euler('x', -90, degrees=True)
+
+            poses= self.poses.copy()
+            original_poses = self.original_poses.copy()
+
+            for i in range(len(self.poses)):
+                # Convert axis-angle to rotation matrix
+                global_orient = Rotation.from_rotvec(self.poses[i, :3])
+
+                # Apply coordinate frame transformation
+                new_orient = rot_zup_to_yup * global_orient
+
+                # Convert back to axis-angle
+                poses[i, :3] = new_orient.as_rotvec()
+
+            for i in range(len(self.original_poses)):
+                # Convert axis-angle to rotation matrix
+                global_orient = Rotation.from_rotvec(self.original_poses[i, :3])
+
+                # Apply coordinate frame transformation
+                new_orient = rot_zup_to_yup * global_orient
+
+                # Convert back to axis-angle
+                original_poses[i, :3] = new_orient.as_rotvec()
+
+            original_joints = rot_zup_to_yup.apply(self.original_joints.reshape(-1, 3)).reshape(self.original_joints.shape)
+            keyframes_joints = rot_zup_to_yup.apply(keyframes_joints.reshape(-1, 3)).reshape(keyframes_joints.shape)
+
+            trans = rot_zup_to_yup.apply(self.trans)
+        else:
+            poses= self.posesWHands
+            original_poses = self.original_poses
+            original_joints=self.original_joints
+            trans=self.trans
 
         np.savez(
             file + "_motion.npz",
-            original_poses=c2c(self.original_poses),
-            original_joints=c2c(self.original_joints),
-            poses=c2c(self.posesWHands),
-            trans=c2c(self.trans),
+            original_poses=c2c(original_poses),
+            original_joints=c2c(original_joints),
+            poses=c2c(poses),
+            trans=c2c(trans),
             betas=c2c(self.betas[0]),
             mocap_framerate=60.0, # could change?
             gender=c2c(np.array(self.smpl_layer.bm.gender)),
             keyframes_indices=c2c(self.keyframes_indices),
+<<<<<<< HEAD
             keyframes_joints=c2c(self.keyframes_joints),
             annotations=c2c(np.array(self.annotations)),
+=======
+            keyframes_joints=c2c(keyframes_joints),
+>>>>>>> e9e23db (Export to amass now flips the data if z_up is true)
         )
         
         self.keyframes_indices=np.array([], dtype=int)
-        self.keyframes_joints=np.array([])
 
     @property
     def color(self):
