@@ -395,12 +395,13 @@ class SMPLSequence(Node):
         if self._z_up:
             rot_zup_to_yup = Rotation.from_euler('x', -90, degrees=True)
 
-            poses= self.poses.copy()
-            original_poses = self.original_poses.copy()
+            poses= c2c(self.posesWHands)
+            original_poses= c2c(self.original_poses)
+            trans=c2c(self.trans)
 
             for i in range(len(self.poses)):
                 # Convert axis-angle to rotation matrix
-                global_orient = Rotation.from_rotvec(self.poses[i, :3])
+                global_orient = Rotation.from_rotvec(poses[i, :3])
 
                 # Apply coordinate frame transformation
                 new_orient = rot_zup_to_yup * global_orient
@@ -410,7 +411,7 @@ class SMPLSequence(Node):
 
             for i in range(len(self.original_poses)):
                 # Convert axis-angle to rotation matrix
-                global_orient = Rotation.from_rotvec(self.original_poses[i, :3])
+                global_orient = Rotation.from_rotvec(original_poses[i, :3])
 
                 # Apply coordinate frame transformation
                 new_orient = rot_zup_to_yup * global_orient
@@ -421,7 +422,7 @@ class SMPLSequence(Node):
             original_joints = rot_zup_to_yup.apply(self.original_joints.reshape(-1, 3)).reshape(self.original_joints.shape)
             keyframes_joints = rot_zup_to_yup.apply(keyframes_joints.reshape(-1, 3)).reshape(keyframes_joints.shape)
 
-            trans = rot_zup_to_yup.apply(self.trans)
+            trans = rot_zup_to_yup.apply(trans)
         else:
             poses= self.posesWHands
             original_poses = self.original_poses
