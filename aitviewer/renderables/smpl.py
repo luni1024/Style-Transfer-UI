@@ -253,7 +253,7 @@ class SMPLSequence(Node):
         print(poses[:, i_body_end:i_left_hand_end].shape)
         print(smpl_layer.bm.NUM_HAND_JOINTS * 3)
 
-        keyframes_indices = body_data.get("keyframes_indices", np.array([]))
+        keyframes_indices = body_data.get("keyframes_indices", np.array([], dtype=int))
         original_poses = body_data.get("original_poses", None)
 
         return cls(
@@ -361,7 +361,7 @@ class SMPLSequence(Node):
             trans=c2c(self.trans),
             keyframes_indices=c2c(self.keyframes_indices),
         )
-        self.keyframes_indices=np.array([])
+        self.keyframes_indices=np.array([], dtype=int)
 
 # this export function saves a motion in the AMASS format, where there is only one poses array
     def export_to_AMASS(self, file: Union[IO, str]):
