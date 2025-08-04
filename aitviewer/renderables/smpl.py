@@ -55,7 +55,6 @@ class SMPLSequence(Node):
         keyframes_indices=np.array([], dtype=int),
         keyframes_joints=np.array([]),
         annotations=None,
-        prompt=None,
         **kwargs,
     ):
         """
@@ -208,9 +207,19 @@ class SMPLSequence(Node):
 
         # Prompt mode
         self.gui_modes.update({"prompt": {"title": " Prompts", "fn": self.gui_mode_prompt, "icon": "#"}})
-        self.prompt = prompt if prompt is not None else {'inputted': False, 'value': None, 'start': {'changed': False,'value': 0.0}, 'end': {'changed': False,'value': 0.0}}
+#        self.prompt = prompt if prompt is not None else {'inputted': False, 'value': None, 'start': {'changed': False,'value': 0.0}, 'end': {'changed': False,'value': 0.0}}
+        
+        #TODO: implement the prompt-variables as parameter-less class-variables!!!!
+        self.prompt_changed=False           #self.prompt = prompt if prompt is not None else {'inputted': False, 'value': None, 'start': {'changed': False,'value': 0.0}, 'end': {'changed': False,'value': 0.0}}
+        self.prompt_text=None
+        self.prompt_start_changed=False
+        self.prompt_start_value=0
+        self.prompt_end_changed=False
+        self.prompt_end_value=(self.n_frames - 1)/60
 
-        self.annotations = list(annotations) if annotations is not None else []
+        self.current_prompts_only=False
+        
+        self.annotations = annotations if annotations is not None else []
 
     @classmethod
     def from_amass(
@@ -222,12 +231,11 @@ class SMPLSequence(Node):
         log=True,
         fps_out=None,
         z_up=True,
-        annotations=None,
         **kwargs,
     ):
         """Load a sequence downloaded from the AMASS website."""
 
-        body_data = np.load(npz_data_path, allow_pickle=True)
+        body_data = np.load(npz_data_path)
         if smpl_layer is None:
             smpl_layer = SMPLLayer(model_type="smplh", gender=body_data["gender"].item(), device=C.device)
 
@@ -265,8 +273,6 @@ class SMPLSequence(Node):
         keyframes_indices = body_data.get("keyframes_indices", np.array([], dtype=int))
         original_poses = body_data.get("original_poses", None)
 
-        annotations = body_data.get("annotations", annotations) 
-
         return cls(
             poses_body=poses[:, i_root_end:i_body_end],
             poses_root=poses[:, :i_root_end],
@@ -278,7 +284,6 @@ class SMPLSequence(Node):
             z_up=z_up,
             keyframes_indices=keyframes_indices,
             original_poses=original_poses,
-            annotations=annotations,
             **kwargs,
         )
 
@@ -375,8 +380,8 @@ class SMPLSequence(Node):
         )
         self.keyframes_indices=np.array([], dtype=int)
 
+# this export function saves a motion in the AMASS format, where there is only one poses array
     def export_to_AMASS(self, file: Union[IO, str]):
-        '''Exports the motion to a .npz file in the AMASS format (containing only one poses array).'''
         verts, all_joints = self.smpl_layer(
                 poses_root=self.poses_root,
                 poses_body=self.poses_body,
@@ -403,7 +408,6 @@ class SMPLSequence(Node):
             gender=c2c(np.array(self.smpl_layer.bm.gender)),
             keyframes_indices=c2c(self.keyframes_indices),
             keyframes_joints=c2c(self.keyframes_joints),
-            annotations=c2c(np.array(self.annotations)),
         )
         
         self.keyframes_indices=np.array([], dtype=int)
@@ -786,35 +790,55 @@ class SMPLSequence(Node):
         second = self.current_frame_id / 60
         first_index = len(self.annotations)
         sorted_annotations = sorted(self.annotations, key=lambda elem: elem["start"])
+#        current_annotations = filter(sorted_annotations, lambda )
 
+
+        _, self.current_prompts_only = imgui.checkbox("Show only current prompts", self.current_prompts_only)
         for i, annotation in enumerate(sorted_annotations):
-            if i > first_index:
-                if imgui.tree_node(f'Prompt {i}: {annotation["start"]} - {annotation["end"]}'):
-                    imgui.text_wrapped(annotation["text"])
-                    if imgui.button("Delete"):
-                        self.annotations.remove(annotation)
-                    imgui.tree_pop()
+            if self.current_prompts_only:
+                if annotation["start"] <= second and annotation["end"] >= second:
+                    if i > first_index:
+                        if imgui.tree_node(f'Prompt {i}: {annotation["start"]} - {annotation["end"]}'):
+                            imgui.text_wrapped(annotation["text"])
+                            if imgui.button("Delete"):
+                                self.annotations.remove(annotation)
+                            imgui.tree_pop()
+                    else:
+                        if imgui.tree_node(f'Prompt {i}: {annotation["start"]} - {annotation["end"]}', flags=imgui.TREE_NODE_DEFAULT_OPEN|imgui.TREE_NODE_FRAMED):      # This part is for the first Prompt, which gets a different Formatting
+                            imgui.text_wrapped(annotation["text"])
+                            if imgui.button("Delete"):
+                                self.annotations.remove(annotation)
+                            imgui.tree_pop()
+                        first_index = i
             else:
-                if imgui.tree_node(f'Prompt {i}: {annotation["start"]} - {annotation["end"]}', flags=imgui.TREE_NODE_DEFAULT_OPEN|imgui.TREE_NODE_FRAMED):      # This part is for the first Prompt, which gets a different Formatting
-                    imgui.text_wrapped(annotation["text"])
-                    if imgui.button("Delete"):
-                        self.annotations.remove(annotation)
-                    imgui.tree_pop()
-                first_index = i
+                if i != 0:
+                    if imgui.tree_node(f'Prompt {i}: {annotation["start"]} - {annotation["end"]}'):
+                        imgui.text_wrapped(annotation["text"])
+                        if imgui.button("Delete"):
+                            self.annotations.remove(annotation)
+                        imgui.tree_pop()
+                else:
+                    if imgui.tree_node(f'Prompt {i}: {annotation["start"]} - {annotation["end"]}', flags=imgui.TREE_NODE_DEFAULT_OPEN|imgui.TREE_NODE_FRAMED):      # This part is for the first Prompt, which gets a different Formatting
+                        imgui.text_wrapped(annotation["text"])
+                        if imgui.button("Delete"):
+                            self.annotations.remove(annotation)
+                        imgui.tree_pop()
+
+        imgui.dummy(0, 5)
 
 
         ## Add-Button & Start/End Sliders:
         
-        default = self.prompt['value'] if self.prompt['value'] is not None else 'Enter Prompt:'
-        
+        default = self.prompt_text if self.prompt_text is not None else 'Enter Prompt:'
+
         # Prompt_input_field
         text_input_changed, Prompt = imgui.input_text("", default)
         
         # Slidervariables
-        start_val = self.prompt['start']['value']
-        end_val = self.prompt['end']['value']
-        start_changed = self.prompt['start']['changed']
-        end_changed = self.prompt['end']['changed']
+        start_val = self.prompt_start_value
+        end_val = self.prompt_end_value
+        start_changed = self.prompt_start_changed
+        end_changed = self.prompt_end_changed
         if start_changed:
             end_val = max(start_val, end_val)
         if end_changed:
@@ -822,33 +846,35 @@ class SMPLSequence(Node):
 
         # Updating the Prompt(-Input)
         if text_input_changed:
-            self.prompt['inputted'] = True
-            self.prompt['value'] = Prompt
+            self.prompt_changed = True
+            self.prompt_text = Prompt
 
         # Add-Button
         Enter_pressed = imgui.is_key_pressed(imgui.KEY_ENTER)
         imgui.same_line()
-        if (imgui.button("Add") or Enter_pressed) and self.prompt['inputted']:
-            self.annotations.append({'seg_id': 'user', 'text': self.prompt['value'], 'start': round(self.prompt['start']['value'], 3), 'end': round(self.prompt['end']['value'], 3)})
-            self.prompt['inputted'] = False
-            self.prompt['value'] = None
+        if (imgui.button("Add") or Enter_pressed) and self.prompt_changed:
+            self.annotations.append({'seg_id': 'user', 'text': self.prompt_text, 'start': round(self.prompt_start_value, 3), 'end': round(self.prompt_end_value, 3)})
+            self.prompt_changed = False
+            self.prompt_text = None
 
         # Sliders
-        self.prompt['start']['changed'], self.prompt['start']['value'] = imgui.slider_float(f'Start',
+        self.prompt_start_changed, self.prompt_start_value = imgui.slider_float(f'Start',
                            start_val,
                            min_value=0,
                            max_value=(self.n_frames - 1)/60)
 
-        self.prompt['end']['changed'], self.prompt['end']['value'] = imgui.slider_float(f'End',
+        self.prompt_end_changed, self.prompt_end_value = imgui.slider_float(f'End',
                            end_val,
                            min_value=0,
                            max_value=(self.n_frames - 1)/60)
+
+        imgui.dummy(0, 5)
 
         imgui.slider_float(
                 "Second##r_{}".format(self.unique_name),
                 second,
                 min_value=0,
-                max_value=(self.n_frames - 1)/60,)
+                max_value=(self.n_frames - 1)/60)
 
     def gui_io(self, imgui):
         # uses export_to_AMASS now
