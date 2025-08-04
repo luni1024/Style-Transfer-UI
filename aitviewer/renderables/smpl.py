@@ -439,12 +439,8 @@ class SMPLSequence(Node):
             mocap_framerate=60.0, # could change?
             gender=c2c(np.array(self.smpl_layer.bm.gender)),
             keyframes_indices=c2c(self.keyframes_indices),
-<<<<<<< HEAD
-            keyframes_joints=c2c(self.keyframes_joints),
-            annotations=c2c(np.array(self.annotations)),
-=======
             keyframes_joints=c2c(keyframes_joints),
->>>>>>> e9e23db (Export to amass now flips the data if z_up is true)
+            annotations=c2c(np.array(self.annotations)),
         )
         
         self.keyframes_indices=np.array([], dtype=int)
