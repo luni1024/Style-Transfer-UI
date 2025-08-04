@@ -207,10 +207,8 @@ class SMPLSequence(Node):
 
         # Prompt mode
         self.gui_modes.update({"prompt": {"title": " Prompts", "fn": self.gui_mode_prompt, "icon": "#"}})
-#        self.prompt = prompt if prompt is not None else {'inputted': False, 'value': None, 'start': {'changed': False,'value': 0.0}, 'end': {'changed': False,'value': 0.0}}
         
-        #TODO: implement the prompt-variables as parameter-less class-variables!!!!
-        self.prompt_changed=False           #self.prompt = prompt if prompt is not None else {'inputted': False, 'value': None, 'start': {'changed': False,'value': 0.0}, 'end': {'changed': False,'value': 0.0}}
+        self.prompt_changed=False           
         self.prompt_text=None
         self.prompt_start_changed=False
         self.prompt_start_value=0
@@ -218,8 +216,8 @@ class SMPLSequence(Node):
         self.prompt_end_value=(self.n_frames - 1)/60
 
         self.current_prompts_only=False
-        
-        self.annotations = annotations if annotations is not None else []
+
+        self.annotations = list(annotations) if annotations is not None else []
 
     @classmethod
     def from_amass(
@@ -231,11 +229,12 @@ class SMPLSequence(Node):
         log=True,
         fps_out=None,
         z_up=True,
+        annotations=None,
         **kwargs,
     ):
         """Load a sequence downloaded from the AMASS website."""
 
-        body_data = np.load(npz_data_path)
+        body_data = np.load(npz_data_path, allow_pickle=True)
         if smpl_layer is None:
             smpl_layer = SMPLLayer(model_type="smplh", gender=body_data["gender"].item(), device=C.device)
 
@@ -273,6 +272,8 @@ class SMPLSequence(Node):
         keyframes_indices = body_data.get("keyframes_indices", np.array([], dtype=int))
         original_poses = body_data.get("original_poses", None)
 
+        annotations = body_data.get("annotations", annotations) 
+
         return cls(
             poses_body=poses[:, i_root_end:i_body_end],
             poses_root=poses[:, :i_root_end],
@@ -284,6 +285,7 @@ class SMPLSequence(Node):
             z_up=z_up,
             keyframes_indices=keyframes_indices,
             original_poses=original_poses,
+            annotations=annotations,
             **kwargs,
         )
 
@@ -380,8 +382,8 @@ class SMPLSequence(Node):
         )
         self.keyframes_indices=np.array([], dtype=int)
 
-# this export function saves a motion in the AMASS format, where there is only one poses array
     def export_to_AMASS(self, file: Union[IO, str]):
+        '''Exports the motion to a .npz file in the AMASS format (containing only one poses array).'''
         verts, all_joints = self.smpl_layer(
                 poses_root=self.poses_root,
                 poses_body=self.poses_body,
@@ -408,6 +410,7 @@ class SMPLSequence(Node):
             gender=c2c(np.array(self.smpl_layer.bm.gender)),
             keyframes_indices=c2c(self.keyframes_indices),
             keyframes_joints=c2c(self.keyframes_joints),
+            annotations=c2c(np.array(self.annotations)),
         )
         
         self.keyframes_indices=np.array([], dtype=int)
@@ -790,8 +793,6 @@ class SMPLSequence(Node):
         second = self.current_frame_id / 60
         first_index = len(self.annotations)
         sorted_annotations = sorted(self.annotations, key=lambda elem: elem["start"])
-#        current_annotations = filter(sorted_annotations, lambda )
-
 
         _, self.current_prompts_only = imgui.checkbox("Show only current prompts", self.current_prompts_only)
         for i, annotation in enumerate(sorted_annotations):
