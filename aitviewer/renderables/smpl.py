@@ -107,7 +107,7 @@ class SMPLSequence(Node):
         self.poses_body = to_torch(poses_body, dtype=dtype, device=device)
         self.poses_left_hand = to_torch(poses_left_hand, dtype=dtype, device=device)
         self.poses_right_hand = to_torch(poses_right_hand, dtype=dtype, device=device)
-
+        
         poses_root = poses_root if poses_root is not None else torch.zeros([len(poses_body), 3])
         betas = betas if betas is not None else torch.zeros([1, self.smpl_layer.num_betas])
         trans = trans if trans is not None else torch.zeros([len(poses_body), 3])
@@ -139,10 +139,14 @@ class SMPLSequence(Node):
             trans = torch.matmul(first_root_ori.unsqueeze(0), self.trans.unsqueeze(-1)).squeeze()
             self.trans = trans - trans[0:1]
 
+
         self.original_poses = original_poses if original_poses is not None else self.posesWHands
+        self.original_poses = to_torch(self.original_poses, dtype=dtype, device=device)
 
         self.keyframes_indices = keyframes_indices
         self.keyframes_joints = keyframes_joints
+
+        self.show_original_motion = False
 
         # Edit mode
         self.gui_modes.update({"edit": {"title": " Edit", "fn": self.gui_mode_edit, "icon": "\u0081"}})
@@ -153,8 +157,11 @@ class SMPLSequence(Node):
         self._edit_local_axes = True
 
         # Nodes
+        self.show_original_motion = True
         self.vertices, self.joints, self.faces, self.skeleton = self.fk()
         self.original_joints = self.joints.copy()
+        self.show_original_motion = False
+        self.vertices, self.joints, self.faces, self.skeleton = self.fk()
 
         if self._is_rigged:
             self.skeleton_seq = Skeletons(
@@ -453,7 +460,7 @@ class SMPLSequence(Node):
     def fk(self, current_frame_only=False):
         """Get joints and/or vertices from the poses."""
         if current_frame_only:
-            # Use current frame data.
+            # Use current frame data
             if self._edit_mode:
                 poses_root = self._edit_pose[:3][None, :]
                 poses_body = self._edit_pose[3:][None, :]
@@ -473,20 +480,36 @@ class SMPLSequence(Node):
                 betas = self.betas[self.current_frame_id][None, :]
             else:
                 betas = self.betas
+                
         else:
-            # Use the whole sequence.
+            # Use the whole sequence
             if self._edit_mode:
                 poses_root = self.poses_root.clone()
                 poses_body = self.poses_body.clone()
-
                 poses_root[self.current_frame_id] = self._edit_pose[:3]
                 poses_body[self.current_frame_id] = self._edit_pose[3:]
+            elif self.show_original_motion:
+                # Use original poses for rendering
+                poses = self.original_poses
+                poses_root = poses[:, :3]
+                poses_body = poses[:, 3:3+self.poses_body.shape[1]]
             else:
                 poses_body = self.poses_body
                 poses_root = self.poses_root
 
-            poses_left_hand = self.poses_left_hand
-            poses_right_hand = self.poses_right_hand
+            if self.show_original_motion:
+                offset = 3 + self.poses_body.shape[1]
+                poses_left_hand = None
+                poses_right_hand = None
+                if self.poses_left_hand is not None:
+                    poses_left_hand = poses[:, offset:offset+self.poses_left_hand.shape[1]]
+                    offset += self.poses_left_hand.shape[1]
+                if self.poses_right_hand is not None:
+                    poses_right_hand = poses[:, offset:offset+self.poses_right_hand.shape[1]]
+            else:
+                poses_left_hand = self.poses_left_hand
+                poses_right_hand = self.poses_right_hand
+            
             trans = self.trans
             betas = self.betas
 
@@ -650,6 +673,7 @@ class SMPLSequence(Node):
         self._selected_mode = selected_mode
 
         if self.selected_mode == "edit":
+            self.show_original_motion = False
             self.rbs.enabled = True
             self.rbs.is_selectable = False
             self._edit_pose = self.poses[self.current_frame_id].clone()
@@ -885,6 +909,16 @@ class SMPLSequence(Node):
             path = os.path.join(dir, self.name)
             self.export_to_AMASS(path)
             print(f'Exported AMASS sequence to "{path}_motion.npz"')
+
+    def gui_mode_view(self, imgui):
+            """Render custom GUI for view mode"""
+            # Added button to toggle between original and edited motion
+            if imgui.button(
+            "View Original Motion" if not self.show_original_motion else "View Edited Motion"
+            ):
+                self.show_original_motion = not self.show_original_motion
+                self.redraw()
+        
 
     def gui_context_menu(self, imgui, x: int, y: int):
         if self.edit_mode and self._edit_joint is not None:
