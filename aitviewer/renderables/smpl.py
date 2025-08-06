@@ -106,8 +106,6 @@ class SMPLSequence(Node):
         self.poses_body = to_torch(poses_body, dtype=dtype, device=device)
         self.poses_left_hand = to_torch(poses_left_hand, dtype=dtype, device=device)
         self.poses_right_hand = to_torch(poses_right_hand, dtype=dtype, device=device)
-
-        self.original_poses = to_torch(original_poses, dtype=dtype, device=device)
         
         poses_root = poses_root if poses_root is not None else torch.zeros([len(poses_body), 3])
         betas = betas if betas is not None else torch.zeros([1, self.smpl_layer.num_betas])
@@ -140,7 +138,9 @@ class SMPLSequence(Node):
             trans = torch.matmul(first_root_ori.unsqueeze(0), self.trans.unsqueeze(-1)).squeeze()
             self.trans = trans - trans[0:1]
 
+
         self.original_poses = original_poses if original_poses is not None else self.posesWHands
+        self.original_poses = to_torch(self.original_poses, dtype=dtype, device=device)
 
         self.keyframes_indices = keyframes_indices
         self.keyframes_joints = keyframes_joints
@@ -156,8 +156,11 @@ class SMPLSequence(Node):
         self._edit_local_axes = True
 
         # Nodes
+        self.show_original_motion = True
         self.vertices, self.joints, self.faces, self.skeleton = self.fk()
         self.original_joints = self.joints.copy()
+        self.show_original_motion = False
+        self.vertices, self.joints, self.faces, self.skeleton = self.fk()
 
         if self._is_rigged:
             self.skeleton_seq = Skeletons(
