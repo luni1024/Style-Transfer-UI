@@ -270,6 +270,11 @@ class SMPLSequence(Node):
         i_left_hand_end = i_body_end + smpl_layer.bm.NUM_HAND_JOINTS * 3
         i_right_hand_end = i_left_hand_end + smpl_layer.bm.NUM_HAND_JOINTS * 3
 
+        print(i_right_hand_end)
+
+        poses_left_hand=poses[:, i_body_end:i_left_hand_end] if poses.shape[1] == i_right_hand_end else None
+        poses_right_hand=poses[:, i_left_hand_end:i_right_hand_end] if poses.shape[1] == i_right_hand_end else None
+
 
         print(poses[:, i_body_end:i_left_hand_end].shape)
         print(smpl_layer.bm.NUM_HAND_JOINTS * 3)
@@ -282,8 +287,8 @@ class SMPLSequence(Node):
         return cls(
             poses_body=poses[:, i_root_end:i_body_end],
             poses_root=poses[:, :i_root_end],
-            poses_left_hand=poses[:, i_body_end:i_left_hand_end],
-            poses_right_hand=poses[:, i_left_hand_end:i_right_hand_end],
+            poses_left_hand=poses_left_hand,
+            poses_right_hand=poses_right_hand,
             smpl_layer=smpl_layer,
             betas=body_data["betas"][np.newaxis],
             trans=trans,
