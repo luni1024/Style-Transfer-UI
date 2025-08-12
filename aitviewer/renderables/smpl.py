@@ -270,14 +270,8 @@ class SMPLSequence(Node):
         i_left_hand_end = i_body_end + smpl_layer.bm.NUM_HAND_JOINTS * 3
         i_right_hand_end = i_left_hand_end + smpl_layer.bm.NUM_HAND_JOINTS * 3
 
-        print(i_right_hand_end)
-
         poses_left_hand=poses[:, i_body_end:i_left_hand_end] if poses.shape[1] == i_right_hand_end else None
         poses_right_hand=poses[:, i_left_hand_end:i_right_hand_end] if poses.shape[1] == i_right_hand_end else None
-
-
-        print(poses[:, i_body_end:i_left_hand_end].shape)
-        print(smpl_layer.bm.NUM_HAND_JOINTS * 3)
 
         keyframes_indices = body_data.get("keyframes_indices", np.array([], dtype=int))
         original_poses = body_data.get("original_poses", None)
