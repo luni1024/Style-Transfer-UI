@@ -53,7 +53,6 @@ class SMPLSequence(Node):
         icon="\u0093",
         original_poses=None,
         keyframes_indices=np.array([], dtype=int),
-        keyframes_joints=np.array([]),
         annotations=None,
         **kwargs,
     ):
@@ -144,7 +143,6 @@ class SMPLSequence(Node):
         self.original_poses = to_torch(self.original_poses, dtype=dtype, device=device)
 
         self.keyframes_indices = keyframes_indices
-        self.keyframes_joints = keyframes_joints
 
         self.show_original_motion = False
 
@@ -272,9 +270,8 @@ class SMPLSequence(Node):
         i_left_hand_end = i_body_end + smpl_layer.bm.NUM_HAND_JOINTS * 3
         i_right_hand_end = i_left_hand_end + smpl_layer.bm.NUM_HAND_JOINTS * 3
 
-
-        print(poses[:, i_body_end:i_left_hand_end].shape)
-        print(smpl_layer.bm.NUM_HAND_JOINTS * 3)
+        poses_left_hand=poses[:, i_body_end:i_left_hand_end] if poses.shape[1] == i_right_hand_end else None
+        poses_right_hand=poses[:, i_left_hand_end:i_right_hand_end] if poses.shape[1] == i_right_hand_end else None
 
         keyframes_indices = body_data.get("keyframes_indices", np.array([], dtype=int))
         original_poses = body_data.get("original_poses", None)
@@ -284,8 +281,8 @@ class SMPLSequence(Node):
         return cls(
             poses_body=poses[:, i_root_end:i_body_end],
             poses_root=poses[:, :i_root_end],
-            poses_left_hand=poses[:, i_body_end:i_left_hand_end],
-            poses_right_hand=poses[:, i_left_hand_end:i_right_hand_end],
+            poses_left_hand=poses_left_hand,
+            poses_right_hand=poses_right_hand,
             smpl_layer=smpl_layer,
             betas=body_data["betas"][np.newaxis],
             trans=trans,
@@ -390,38 +387,62 @@ class SMPLSequence(Node):
         self.keyframes_indices=np.array([], dtype=int)
 
     def export_to_AMASS(self, file: Union[IO, str]):
-        '''Exports the motion to a .npz file in the AMASS format (containing only one poses array).'''
-        verts, all_joints = self.smpl_layer(
-                poses_root=self.poses_root,
-                poses_body=self.poses_body,
-                poses_left_hand=self.poses_left_hand,
-                poses_right_hand=self.poses_right_hand,
-                betas=self.betas,
-                trans=self.trans,
-            )
-        
-        whole_skeleton = self.smpl_layer.skeletons()["all"].T
-        all_joints = all_joints[:, : whole_skeleton.shape[0]]
-         
+
         self.keyframes_indices = np.unique(self.keyframes_indices)
-        self.keyframes_joints = all_joints[self.keyframes_indices]
+        keyframes_joints = self.joints[self.keyframes_indices]
+
+        if self._z_up:
+            rot_zup_to_yup = Rotation.from_euler('x', -90, degrees=True)
+
+            poses= c2c(self.posesWHands)
+            original_poses= c2c(self.original_poses)
+            trans=c2c(self.trans)
+
+            for i in range(len(self.poses)):
+                # Convert axis-angle to rotation matrix
+                global_orient = Rotation.from_rotvec(poses[i, :3])
+
+                # Apply coordinate frame transformation
+                new_orient = rot_zup_to_yup * global_orient
+
+                # Convert back to axis-angle
+                poses[i, :3] = new_orient.as_rotvec()
+
+            for i in range(len(self.original_poses)):
+                # Convert axis-angle to rotation matrix
+                global_orient = Rotation.from_rotvec(original_poses[i, :3])
+
+                # Apply coordinate frame transformation
+                new_orient = rot_zup_to_yup * global_orient
+
+                # Convert back to axis-angle
+                original_poses[i, :3] = new_orient.as_rotvec()
+
+            original_joints = rot_zup_to_yup.apply(self.original_joints.reshape(-1, 3)).reshape(self.original_joints.shape)
+            keyframes_joints = rot_zup_to_yup.apply(keyframes_joints.reshape(-1, 3)).reshape(keyframes_joints.shape)
+
+            trans = rot_zup_to_yup.apply(trans)
+        else:
+            poses= self.posesWHands
+            original_poses = self.original_poses
+            original_joints=self.original_joints
+            trans=self.trans
 
         np.savez(
             file + "_motion.npz",
-            original_poses=c2c(self.original_poses),
-            original_joints=c2c(self.original_joints),
-            poses=c2c(self.posesWHands),
-            trans=c2c(self.trans),
+            original_poses=c2c(original_poses),
+            original_joints=c2c(original_joints),
+            poses=c2c(poses),
+            trans=c2c(trans),
             betas=c2c(self.betas[0]),
             mocap_framerate=60.0, # could change?
             gender=c2c(np.array(self.smpl_layer.bm.gender)),
             keyframes_indices=c2c(self.keyframes_indices),
-            keyframes_joints=c2c(self.keyframes_joints),
+            keyframes_joints=c2c(keyframes_joints),
             annotations=c2c(np.array(self.annotations)),
         )
         
         self.keyframes_indices=np.array([], dtype=int)
-        self.keyframes_joints=np.array([])
 
     @property
     def color(self):

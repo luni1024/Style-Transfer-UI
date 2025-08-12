@@ -45,14 +45,15 @@ seq_export = SMPLSequence.from_amass(
     fps_out=60.0,
     color=c,
     name="AMASS Running",
-    show_joint_angles=True
+    show_joint_angles=True,
+    z_up=False
     )
 
 ptc_export = PointClouds(
     seq_export.vertices,
     position=np.array([1.0, 0.0, 0.0]),
     color=c,
-    z_up=True
+    z_up=False
     )
 
 v = Viewer()
