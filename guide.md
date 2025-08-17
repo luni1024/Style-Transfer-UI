@@ -91,6 +91,8 @@ Pay attention to choose the right configuration (Linux for WSL/Linux, Pip, Pytho
 
 Step 3: Style-Transfer-UI
 
+To clone into our repository (forked from eth-ait/aitviewer) and install everything:
+
 git clone git@github.com:luni1024/Style-Transfer-UI.git
 
 cd Style-Transfer-UI
@@ -99,7 +101,7 @@ pip install -e .
 
 
 
-
+You might need to install these packages for the viewer to work:
 
 sudo apt install libegl1 libgl1 libgl1-mesa-dev libegl-dev mesa-utils libxcb-xinerama0 ffmpeg
 
